@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
+import '../services/favorites_service.dart';
 import 'text_detail_screen.dart';
 
 class CategoryListScreen extends StatelessWidget {
@@ -73,7 +74,7 @@ class CategoryListScreen extends StatelessWidget {
   }
 }
 
-class TextCard extends StatelessWidget {
+class TextCard extends StatefulWidget {
   final String text;
   final int index;
   final Category category;
@@ -84,6 +85,51 @@ class TextCard extends StatelessWidget {
     required this.index,
     required this.category,
   });
+
+  @override
+  State<TextCard> createState() => _TextCardState();
+}
+
+class _TextCardState extends State<TextCard> {
+  bool isFavorite = false;
+  final FavoritesService _favoritesService = FavoritesService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    bool favorite = await _favoritesService.isFavorite(widget.text);
+    if (mounted) {
+      setState(() {
+        isFavorite = favorite;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    bool success = await _favoritesService.toggleFavorite(widget.text);
+    if (success && mounted) {
+      setState(() {
+        isFavorite = !isFavorite;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,8 +144,8 @@ class TextCard extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => TextDetailScreen(
-                category: category,
-                initialIndex: index,
+                category: widget.category,
+                initialIndex: widget.index,
               ),
             ),
           );
@@ -119,7 +165,7 @@ class TextCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    '${index + 1}',
+                    '${widget.index + 1}',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -130,13 +176,28 @@ class TextCard extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  text,
+                  widget.text,
                   style: const TextStyle(
                     fontSize: 15,
                     height: 1.4,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Favorite button
+              IconButton(
+                onPressed: _toggleFavorite,
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color:
+                      isFavorite ? const Color(0xFFFFABAB) : Colors.grey[400],
+                  size: 20,
+                ),
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
                 ),
               ),
               Icon(

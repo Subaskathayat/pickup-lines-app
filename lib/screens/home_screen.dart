@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/categories_data.dart';
 import '../models/category.dart';
+import '../widgets/app_drawer.dart';
 import 'category_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -18,6 +19,7 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      drawer: const AppDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

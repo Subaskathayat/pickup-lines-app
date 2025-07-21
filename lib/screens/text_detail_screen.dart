@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/category.dart';
+import '../services/favorites_service.dart';
 
 class TextDetailScreen extends StatefulWidget {
   final Category category;
@@ -19,12 +20,54 @@ class TextDetailScreen extends StatefulWidget {
 class _TextDetailScreenState extends State<TextDetailScreen> {
   late PageController _pageController;
   late int _currentIndex;
+  final FavoritesService _favoritesService = FavoritesService.instance;
+  List<bool> _favoriteStates = [];
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
+    _initializeFavoriteStates();
+  }
+
+  Future<void> _initializeFavoriteStates() async {
+    _favoriteStates = List.filled(widget.category.texts.length, false);
+    for (int i = 0; i < widget.category.texts.length; i++) {
+      bool isFavorite =
+          await _favoritesService.isFavorite(widget.category.texts[i]);
+      if (mounted) {
+        setState(() {
+          _favoriteStates[i] = isFavorite;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite(int index) async {
+    String pickupLine = widget.category.texts[index];
+    bool success = await _favoritesService.toggleFavorite(pickupLine);
+
+    if (success && mounted) {
+      setState(() {
+        _favoriteStates[index] = !_favoriteStates[index];
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _favoriteStates[index]
+                ? 'Added to favorites ❤️'
+                : 'Removed from favorites',
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -41,6 +84,19 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Favorite button
+          if (_favoriteStates.isNotEmpty)
+            IconButton(
+              onPressed: () => _toggleFavorite(_currentIndex),
+              icon: Icon(
+                _favoriteStates[_currentIndex]
+                    ? Icons.favorite
+                    : Icons.favorite_border,
+                color: _favoriteStates[_currentIndex]
+                    ? const Color(0xFFFFABAB)
+                    : Colors.grey[600],
+              ),
+            ),
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
@@ -142,24 +198,65 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Copy button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _copyToClipboard(context),
-                    icon: const Icon(Icons.copy),
-                    label: const Text(
-                      'Copy Text',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // Action buttons row
+                Row(
+                  children: [
+                    // Favorite button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _favoriteStates.isNotEmpty
+                            ? () => _toggleFavorite(_currentIndex)
+                            : null,
+                        icon: Icon(
+                          _favoriteStates.isNotEmpty &&
+                                  _favoriteStates[_currentIndex]
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                        ),
+                        label: Text(
+                          _favoriteStates.isNotEmpty &&
+                                  _favoriteStates[_currentIndex]
+                              ? 'Favorited'
+                              : 'Favorite',
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _favoriteStates.isNotEmpty &&
+                                  _favoriteStates[_currentIndex]
+                              ? const Color(0xFFFFABAB)
+                              : null,
+                          foregroundColor: _favoriteStates.isNotEmpty &&
+                                  _favoriteStates[_currentIndex]
+                              ? Colors.white
+                              : null,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    // Copy button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _copyToClipboard(context),
+                        icon: const Icon(Icons.copy),
+                        label: const Text(
+                          'Copy',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 // Swipe hint
