@@ -6,6 +6,7 @@ import '../screens/pickup_line_of_day_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/privacy_policy_screen.dart';
 import '../screens/terms_conditions_screen.dart';
+import '../screens/subscription_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -72,7 +73,12 @@ class AppDrawer extends StatelessWidget {
               icon: Icons.remove_circle_outline,
               title: 'Remove Ads',
               subtitle: 'Enjoy ad-free experience',
-              onTap: () => _showRemoveAdsDialog(context),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SubscriptionScreen(),
+                ),
+              ),
             ),
             _buildDrawerItem(
               context,
@@ -197,38 +203,6 @@ class AppDrawer extends StatelessWidget {
         onTap();
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    );
-  }
-
-  void _showRemoveAdsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Remove Ads'),
-          content: const Text(
-            'Upgrade to premium to enjoy an ad-free experience and unlock additional features!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Maybe Later'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // TODO: Implement premium upgrade logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Premium upgrade coming soon!'),
-                  ),
-                );
-              },
-              child: const Text('Upgrade Now'),
-            ),
-          ],
-        );
-      },
     );
   }
 

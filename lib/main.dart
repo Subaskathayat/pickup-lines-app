@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'services/line_of_day_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize the Line of Day service
+  await LineOfDayService.instance.initialize();
+
   runApp(const FlirtyTextApp());
 }
 

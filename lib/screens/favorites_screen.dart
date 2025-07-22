@@ -180,6 +180,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           duration: const Duration(seconds: 2),
           action: SnackBarAction(
             label: 'Undo',
+            textColor: const Color(
+                0xFFFFABAB), // Coral pink to match heart/favorite color
             onPressed: () async {
               await _favoritesService.addToFavorites(pickupLine);
               _loadFavorites(); // Reload to show the restored item
