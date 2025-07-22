@@ -8,17 +8,14 @@ import 'package:pickup_lines/screens/category_list_screen.dart';
 import 'package:pickup_lines/models/category.dart';
 
 void main() {
-  testWidgets('App loads and shows home screen', (WidgetTester tester) async {
+  testWidgets('App loads and shows splash screen', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const FlirtyTextApp());
 
-    // Verify that the app title is displayed.
+    // Verify that the splash screen is displayed first.
     expect(find.text('Pickup Lines'), findsOneWidget);
-
-    // Verify that the home screen content is displayed.
-    expect(find.text('Choose your style'), findsOneWidget);
-    expect(find.text('Pick a category to find the perfect pickup line'),
-        findsOneWidget);
+    expect(find.text('Find your perfect line 💕'), findsOneWidget);
+    expect(find.text('Loading your romantic arsenal...'), findsOneWidget);
   });
 
   group('SliverAnimatedList Tests', () {
