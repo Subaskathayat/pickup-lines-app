@@ -14,6 +14,7 @@ class CustomCollectionScreen extends StatefulWidget {
 class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   final CustomLinesService _customLinesService = CustomLinesService.instance;
   final FavoritesService _favoritesService = FavoritesService.instance;
+  final ScrollController _scrollController = ScrollController();
   List<String> _customLines = [];
   Set<String> _favoriteTexts = {};
   bool _isLoading = true;
@@ -22,6 +23,12 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -53,7 +60,7 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Custom Collection',
+          'My Pickup Lines',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -151,11 +158,9 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              const Icon(Icons.info_outline, color: Colors.grey),
-              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${_customLines.length} custom pickup lines',
+                  'Total ${_customLines.length} Pickup lines',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 14,
@@ -167,11 +172,16 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
         ),
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _customLines.length,
             itemBuilder: (context, index) {
               final line = _customLines[index];
-              return _buildCustomLineCard(line, index);
+              return ScrollAnimatedItem(
+                index: index,
+                scrollController: _scrollController,
+                child: _buildCustomLineCard(line, index),
+              );
             },
           ),
         ),
@@ -183,6 +193,8 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
     final isFavorite = _favoriteTexts.contains(line);
 
     return Card(
+      key: ValueKey(
+          'custom_line_${index}_${line.hashCode}'), // Unique key for each card
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -526,6 +538,115 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
+    );
+  }
+}
+
+class ScrollAnimatedItem extends StatefulWidget {
+  final int index;
+  final ScrollController scrollController;
+  final Widget child;
+
+  const ScrollAnimatedItem({
+    super.key,
+    required this.index,
+    required this.scrollController,
+    required this.child,
+  });
+
+  @override
+  State<ScrollAnimatedItem> createState() => _ScrollAnimatedItemState();
+}
+
+class _ScrollAnimatedItemState extends State<ScrollAnimatedItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  bool _hasAnimated = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<double>(
+      begin: 250.0, // Start 250px to the right
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutQuart,
+    ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+    ));
+
+    // Listen to scroll changes
+    widget.scrollController.addListener(_onScroll);
+
+    // Check initial visibility
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkVisibility();
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    _checkVisibility();
+  }
+
+  void _checkVisibility() {
+    if (_hasAnimated) return;
+
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Trigger animation when item is about to enter the screen (with some buffer)
+    if (position.dy < screenHeight + 100 &&
+        position.dy > -renderBox.size.height) {
+      _hasAnimated = true;
+
+      // Add a small delay based on index for subtle staggering
+      final delay = Duration(milliseconds: (widget.index % 3) * 50);
+      Future.delayed(delay, () {
+        if (mounted) {
+          _animationController.forward();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(_slideAnimation.value, 0),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: widget.child,
+          ),
+        );
+      },
     );
   }
 }

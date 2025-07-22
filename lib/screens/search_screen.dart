@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FavoritesService _favoritesService = FavoritesService.instance;
   final PickupLinesService _pickupLinesService = PickupLinesService.instance;
+  final CustomLinesService _customLinesService = CustomLinesService.instance;
   List<SearchResult> _searchResults = [];
   bool _isSearching = false;
   Set<String> _favoriteTexts = {};
@@ -63,7 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void _onSearchChanged() {
+  void _onSearchChanged() async {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
       setState(() {
@@ -77,8 +79,9 @@ class _SearchScreenState extends State<SearchScreen> {
       _isSearching = true;
     });
 
-    // Search through all categories
     final results = <SearchResult>[];
+
+    // Search through all categories
     for (final category in _categories) {
       for (int i = 0; i < category.texts.length; i++) {
         final text = category.texts[i];
@@ -88,15 +91,38 @@ class _SearchScreenState extends State<SearchScreen> {
             category: category.name,
             categoryIcon: category.icon,
             index: i,
+            isCustomCollection: false,
           ));
         }
       }
     }
 
-    setState(() {
-      _searchResults = results;
-      _isSearching = false;
-    });
+    // Search through custom collections
+    try {
+      final customLines = await _customLinesService.getCustomLines();
+      for (int i = 0; i < customLines.length; i++) {
+        final text = customLines[i];
+        if (text.toLowerCase().contains(query)) {
+          results.add(SearchResult(
+            text: text,
+            category: 'My Collection',
+            categoryIcon: '✏️',
+            index: i,
+            isCustomCollection: true,
+          ));
+        }
+      }
+    } catch (e) {
+      // Handle error silently - custom lines search is optional
+      print('Error searching custom lines: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    }
   }
 
   Future<void> _toggleFavorite(String text) async {
@@ -302,6 +328,29 @@ class _SearchScreenState extends State<SearchScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                if (result.isCustomCollection) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE1D5E7).withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFD1C4E9).withValues(alpha: 0.8),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      'CUSTOM',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.purple[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -383,11 +432,13 @@ class SearchResult {
   final String category;
   final String categoryIcon;
   final int index;
+  final bool isCustomCollection;
 
   SearchResult({
     required this.text,
     required this.category,
     required this.categoryIcon,
     required this.index,
+    this.isCustomCollection = false,
   });
 }

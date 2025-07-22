@@ -304,7 +304,7 @@ class _TextCardState extends State<TextCard> {
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: 120, // Increased height to 120px
+          height: 120, // Reverted back to original height
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -334,7 +334,7 @@ class _TextCardState extends State<TextCard> {
                     fontSize: 15,
                     height: 1.4,
                   ),
-                  maxLines: 3, // Increased from 2 to 3 lines
+                  maxLines: 3, // Reverted back to 3 lines
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

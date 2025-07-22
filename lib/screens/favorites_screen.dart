@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
+import '../services/pickup_lines_service.dart';
+import 'text_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -12,6 +14,7 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final FavoritesService _favoritesService = FavoritesService.instance;
+  final PickupLinesService _pickupLinesService = PickupLinesService.instance;
   List<String> favorites = [];
   bool isLoading = true;
 
@@ -105,61 +108,66 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFFFD1DC).withValues(alpha: 0.3),
-              const Color(0xFFFFABAB).withValues(alpha: 0.1),
-            ],
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              children: [
-                IconButton(
-                  onPressed: () => _removeFavorite(index),
-                  icon: const Icon(
-                    Icons.favorite,
-                    color: Color(0xFFFFABAB),
-                  ),
-                  tooltip: 'Remove from favorites',
-                ),
-                IconButton(
-                  onPressed: () => _copyText(text),
-                  icon: Icon(
-                    Icons.copy,
-                    color: Colors.grey[600],
-                  ),
-                  tooltip: 'Copy text',
-                ),
-                IconButton(
-                  onPressed: () => _shareText(text),
-                  icon: Icon(
-                    Icons.share,
-                    color: Colors.grey[600],
-                  ),
-                  tooltip: 'Share text',
-                ),
+      child: InkWell(
+        onTap: () =>
+            _navigateToTextDetail(text), // Navigate to text detail screen
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
+                const Color(0xFFFFABAB).withValues(alpha: 0.1),
               ],
             ),
-          ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () => _removeFavorite(index),
+                    icon: const Icon(
+                      Icons.favorite,
+                      color: Color(0xFFFFABAB),
+                    ),
+                    tooltip: 'Remove from favorites',
+                  ),
+                  IconButton(
+                    onPressed: () => _copyText(text),
+                    icon: Icon(
+                      Icons.copy,
+                      color: Colors.grey[600],
+                    ),
+                    tooltip: 'Copy text',
+                  ),
+                  IconButton(
+                    onPressed: () => _shareText(text),
+                    icon: Icon(
+                      Icons.share,
+                      color: Colors.grey[600],
+                    ),
+                    tooltip: 'Share text',
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -207,5 +215,43 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     SharePlus.instance.share(
       ShareParams(text: text),
     );
+  }
+
+  Future<void> _navigateToTextDetail(String favoriteText) async {
+    try {
+      // Find the category and index for this favorite line
+      final result =
+          await _pickupLinesService.findCategoryAndIndexForLine(favoriteText);
+
+      if (result != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TextDetailScreen(
+              category: result['category'],
+              initialIndex: result['index'],
+            ),
+          ),
+        );
+      } else if (mounted) {
+        // Show error if line not found in categories
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to find this line in categories'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error opening text detail: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }

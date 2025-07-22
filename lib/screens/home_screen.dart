@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 _buildQuickActionButton(
                   icon: Icons.edit,
-                  label: 'Create Custom',
+                  label: 'Your Lines',
                   color: Colors.grey[600]!,
                   onPressed: () => _showCreateCustomDialog(context),
                 ),
@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (index == 0) {
                               // Custom Collection Card
                               return FeatureCard(
-                                title: 'Custom Collection',
+                                title: 'My Collection',
                                 subtitle: 'Your personal pickup lines',
                                 icon: '✏️',
                                 count: customLinesCount,

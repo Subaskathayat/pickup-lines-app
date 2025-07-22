@@ -127,47 +127,83 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                 return Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Center(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
+                    child: AspectRatio(
+                      aspectRatio: 1.0, // 1:1 aspect ratio for square format
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              const Color(0xFFFFD1DC)
-                                  .withValues(alpha: 0.2), // Light Pink
-                              const Color(0xFFB0E0E6)
-                                  .withValues(alpha: 0.1), // Powder Blue
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                const Color(0xFFFFD1DC)
+                                    .withValues(alpha: 0.2), // Light Pink
+                                const Color(0xFFB0E0E6)
+                                    .withValues(alpha: 0.1), // Powder Blue
+                              ],
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.format_quote,
+                                size: 40,
+                                color: Color(0xFFFFABAB), // Coral Pink
+                              ),
+                              const SizedBox(height: 24),
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    widget.category.texts[index],
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Action buttons inside the card (matching pickup line of day layout)
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildActionButton(
+                                    icon: _favoriteStates.isNotEmpty &&
+                                            _favoriteStates[index]
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    label: 'Favorite',
+                                    color: const Color(0xFFFFABAB),
+                                    onPressed: () => _toggleFavorite(index),
+                                  ),
+                                  _buildActionButton(
+                                    icon: Icons.copy,
+                                    label: 'Copy',
+                                    color: Colors.blue,
+                                    onPressed: () => _copyToClipboard(context),
+                                  ),
+                                  _buildActionButton(
+                                    icon: Icons.share,
+                                    label: 'Share',
+                                    color: Colors.green,
+                                    onPressed: () => _shareText(context),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.format_quote,
-                              size: 40,
-                              color: Color(0xFFFFABAB), // Coral Pink
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              widget.category.texts[index],
-                              style: const TextStyle(
-                                fontSize: 20,
-                                height: 1.5,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -177,89 +213,10 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0,
+                40.0), // Increased bottom padding from 24 to 40
             child: Column(
               children: [
-                // Action buttons row
-                Row(
-                  children: [
-                    // Favorite button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _favoriteStates.isNotEmpty
-                            ? () => _toggleFavorite(_currentIndex)
-                            : null,
-                        icon: Icon(
-                          _favoriteStates.isNotEmpty &&
-                                  _favoriteStates[_currentIndex]
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                        ),
-                        label: Text(
-                          _favoriteStates.isNotEmpty &&
-                                  _favoriteStates[_currentIndex]
-                              ? 'Favorited'
-                              : 'Favorite',
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _favoriteStates.isNotEmpty &&
-                                  _favoriteStates[_currentIndex]
-                              ? const Color(0xFFFFABAB)
-                              : null,
-                          foregroundColor: _favoriteStates.isNotEmpty &&
-                                  _favoriteStates[_currentIndex]
-                              ? Colors.white
-                              : null,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Copy button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _copyToClipboard(context),
-                        icon: const Icon(Icons.copy),
-                        label: const Text(
-                          'Copy',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Share button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _shareText(context),
-                        icon: const Icon(Icons.share),
-                        label: const Text(
-                          'Share',
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 // Swipe hint
                 Text(
                   'Swipe left or right for more texts',
@@ -294,6 +251,39 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
   void _shareText(BuildContext context) {
     SharePlus.instance.share(
       ShareParams(text: widget.category.texts[_currentIndex]),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            onPressed: onPressed,
+            icon: Icon(icon, color: color),
+            iconSize: 24,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

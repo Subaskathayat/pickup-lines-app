@@ -105,4 +105,22 @@ class PickupLinesService {
     final categories = await loadCategories();
     return categories.length;
   }
+
+  /// Find category and index for a specific pickup line
+  Future<Map<String, dynamic>?> findCategoryAndIndexForLine(String line) async {
+    final categories = await loadCategories();
+
+    for (Category category in categories) {
+      for (int i = 0; i < category.texts.length; i++) {
+        if (category.texts[i] == line) {
+          return {
+            'category': category,
+            'index': i,
+          };
+        }
+      }
+    }
+
+    return null; // Line not found in any category
+  }
 }
