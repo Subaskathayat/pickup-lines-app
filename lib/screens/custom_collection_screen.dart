@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/custom_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../utils/snackbar_utils.dart';
 
 class CustomCollectionScreen extends StatefulWidget {
   const CustomCollectionScreen({super.key});
@@ -198,110 +199,122 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.format_quote,
-                  color: Color(0xFFFFABAB),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    line,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      height: 1.4,
+      child: InkWell(
+        onTap: () {
+          // Optional: Add tap functionality if needed
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
+                const Color(0xFFFFABAB).withValues(alpha: 0.1),
+              ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.format_quote,
+                    color: Color(0xFFFFABAB),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => _copyToClipboard(line),
-                      icon: const Icon(Icons.copy, size: 20),
-                      tooltip: 'Copy',
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[100],
-                        foregroundColor: Colors.grey[700],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => _copyToClipboard(line),
+                        icon: Icon(
+                          Icons.copy,
+                          color: Colors.grey[600],
+                        ),
+                        tooltip: 'Copy text',
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => _shareText(line),
-                      icon: const Icon(Icons.share, size: 20),
-                      tooltip: 'Share',
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[100],
-                        foregroundColor: Colors.grey[700],
+                      IconButton(
+                        onPressed: () => _shareText(line),
+                        icon: Icon(
+                          Icons.share,
+                          color: Colors.grey[600],
+                        ),
+                        tooltip: 'Share text',
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => _toggleFavorite(line),
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        size: 20,
-                        color: isFavorite ? Colors.red : Colors.grey[700],
+                      IconButton(
+                        onPressed: () => _toggleFavorite(line),
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavorite
+                              ? const Color(0xFFFFABAB)
+                              : Colors.grey[600],
+                        ),
+                        tooltip: isFavorite
+                            ? 'Remove from favorites'
+                            : 'Add to favorites',
                       ),
-                      tooltip: isFavorite
-                          ? 'Remove from favorites'
-                          : 'Add to favorites',
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[100],
+                    ],
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditLineDialog(line, index);
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmation(line, index);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditLineDialog(line, index);
-                    } else if (value == 'delete') {
-                      _showDeleteConfirmation(line, index);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 18),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: Icon(Icons.more_vert, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ],
+                    ],
+                    child: Icon(Icons.more_vert, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -429,25 +442,28 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   Future<void> _addCustomLine(String text) async {
     if (text.trim().isEmpty) {
       Navigator.of(context).pop();
-      _showSnackBar('Please enter a pickup line', Colors.orange);
+      SnackBarUtils.showWarning(context, 'Please enter a pickup line');
       return;
     }
 
     final success = await _customLinesService.addCustomLine(text);
-    Navigator.of(context).pop();
 
-    if (success) {
-      await _loadCustomLines();
-      _showSnackBar('Custom pickup line added! 💕', Colors.green);
-    } else {
-      _showSnackBar('This pickup line already exists', Colors.orange);
+    if (mounted) {
+      Navigator.of(context).pop();
+
+      if (success) {
+        await _loadCustomLines();
+        SnackBarUtils.showSuccess(context, 'Custom pickup line added! 💕');
+      } else {
+        SnackBarUtils.showWarning(context, 'This pickup line already exists');
+      }
     }
   }
 
   Future<void> _updateCustomLine(String oldLine, String newText) async {
     if (newText.trim().isEmpty) {
       Navigator.of(context).pop();
-      _showSnackBar('Please enter a pickup line', Colors.orange);
+      SnackBarUtils.showWarning(context, 'Please enter a pickup line');
       return;
     }
 
@@ -458,50 +474,67 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
 
     final success =
         await _customLinesService.updateCustomLine(oldLine, newText);
-    Navigator.of(context).pop();
 
-    if (success) {
-      await _loadCustomLines();
-      await _loadFavorites(); // Refresh favorites in case the updated line was favorited
-      _showSnackBar('Pickup line updated! ✨', Colors.green);
-    } else {
-      _showSnackBar('Failed to update pickup line', Colors.red);
+    if (mounted) {
+      Navigator.of(context).pop();
+
+      if (success) {
+        await _loadCustomLines();
+        await _loadFavorites(); // Refresh favorites in case the updated line was favorited
+        SnackBarUtils.showSuccess(context, 'Pickup line updated! ✨');
+      } else {
+        SnackBarUtils.showError(context, 'Failed to update pickup line');
+      }
     }
   }
 
   Future<void> _deleteCustomLine(String line) async {
     final success = await _customLinesService.removeCustomLine(line);
-    Navigator.of(context).pop();
 
-    if (success) {
-      await _loadCustomLines();
-      // Remove from favorites if it was favorited
-      if (_favoriteTexts.contains(line)) {
-        await _favoritesService.removeFromFavorites(line);
-        await _loadFavorites();
+    if (mounted) {
+      Navigator.of(context).pop();
+
+      if (success) {
+        await _loadCustomLines();
+        // Remove from favorites if it was favorited
+        if (_favoriteTexts.contains(line)) {
+          await _favoritesService.removeFromFavorites(line);
+          await _loadFavorites();
+        }
+        if (mounted) {
+          SnackBarUtils.showSnackBar(context, 'Pickup line deleted');
+        }
+      } else {
+        if (mounted) {
+          SnackBarUtils.showError(context, 'Failed to delete pickup line');
+        }
       }
-      _showSnackBar('Pickup line deleted', Colors.grey[600]!);
-    } else {
-      _showSnackBar('Failed to delete pickup line', Colors.red);
     }
   }
 
   Future<void> _clearAllCustomLines() async {
     final success = await _customLinesService.clearAllCustomLines();
-    Navigator.of(context).pop();
 
-    if (success) {
-      // Remove all custom lines from favorites
-      for (final line in _customLines) {
-        if (_favoriteTexts.contains(line)) {
-          await _favoritesService.removeFromFavorites(line);
+    if (mounted) {
+      Navigator.of(context).pop();
+
+      if (success) {
+        // Remove all custom lines from favorites
+        for (final line in _customLines) {
+          if (_favoriteTexts.contains(line)) {
+            await _favoritesService.removeFromFavorites(line);
+          }
+        }
+        await _loadCustomLines();
+        await _loadFavorites();
+        if (mounted) {
+          SnackBarUtils.showSnackBar(context, 'All custom lines cleared');
+        }
+      } else {
+        if (mounted) {
+          SnackBarUtils.showError(context, 'Failed to clear custom lines');
         }
       }
-      await _loadCustomLines();
-      await _loadFavorites();
-      _showSnackBar('All custom lines cleared', Colors.grey[600]!);
-    } else {
-      _showSnackBar('Failed to clear custom lines', Colors.red);
     }
   }
 
@@ -510,10 +543,14 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
 
     if (isFavorite) {
       await _favoritesService.removeFromFavorites(text);
-      _showSnackBar('Removed from favorites', Colors.grey[600]!);
+      if (mounted) {
+        SnackBarUtils.showSnackBar(context, 'Removed from favorites');
+      }
     } else {
       await _favoritesService.addToFavorites(text);
-      _showSnackBar('Added to favorites! ❤️', Colors.red);
+      if (mounted) {
+        SnackBarUtils.showSnackBar(context, 'Added to favorites! ❤️');
+      }
     }
 
     await _loadFavorites();
@@ -521,24 +558,11 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    _showSnackBar('Copied to clipboard! 📋', Colors.blue);
+    SnackBarUtils.showInfo(context, 'Copied to clipboard! 📋');
   }
 
   void _shareText(String text) {
     Share.share(text);
-  }
-
-  void _showSnackBar(String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
   }
 }
 

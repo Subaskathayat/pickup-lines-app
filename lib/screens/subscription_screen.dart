@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/snackbar_utils.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -236,7 +237,9 @@ class SubscriptionScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isPopular ? const Color(0xFFFFABAB).withValues(alpha: 0.1) : Colors.white,
+        color: isPopular
+            ? const Color(0xFFFFABAB).withValues(alpha: 0.1)
+            : Colors.white,
         border: Border.all(
           color: isPopular ? const Color(0xFFFFABAB) : Colors.grey.shade300,
           width: isPopular ? 2 : 1,
@@ -259,7 +262,8 @@ class SubscriptionScreen extends StatelessWidget {
               ),
               if (isPopular)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFABAB),
                     borderRadius: BorderRadius.circular(12),
@@ -311,15 +315,10 @@ class SubscriptionScreen extends StatelessWidget {
 
   void _handleSubscription(BuildContext context) {
     // TODO: Implement actual subscription logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Subscription feature coming soon!'),
-        backgroundColor: const Color(0xFFFFABAB),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
+    SnackBarUtils.showCustom(
+      context,
+      'Subscription feature coming soon!',
+      const Color(0xFFFFABAB),
     );
   }
 }

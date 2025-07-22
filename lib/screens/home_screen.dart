@@ -3,6 +3,7 @@ import '../services/pickup_lines_service.dart';
 import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
+import '../utils/snackbar_utils.dart';
 import 'category_list_screen.dart';
 import 'favorites_screen.dart';
 import 'subscription_screen.dart';
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Category> categories = [];
   bool isLoading = true;
   int customLinesCount = 0;
+  final CustomLinesService _customLinesService = CustomLinesService.instance;
 
   @override
   void initState() {
@@ -42,8 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       // Show error message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading categories: $e')),
+        SnackBarUtils.showError(
+          context,
+          'Error loading categories: $e',
         );
       }
     }
@@ -257,7 +260,63 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showCreateCustomDialog(BuildContext context) {
-    _navigateToCustomCollection();
+    _showAddLineDialog();
+  }
+
+  void _showAddLineDialog() {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Custom Pickup Line'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter your custom pickup line...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _addCustomLine(controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFABAB),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addCustomLine(String text) async {
+    if (text.trim().isEmpty) {
+      Navigator.of(context).pop();
+      SnackBarUtils.showWarning(context, 'Please enter a pickup line');
+      return;
+    }
+
+    final success = await _customLinesService.addCustomLine(text);
+
+    if (mounted) {
+      Navigator.of(context).pop();
+
+      if (success) {
+        SnackBarUtils.showSuccess(context, 'Custom pickup line added! 💕');
+        // Navigate to custom collection screen after successful addition
+        _navigateToCustomCollection();
+      } else {
+        SnackBarUtils.showWarning(context, 'This pickup line already exists');
+      }
+    }
   }
 
   void _navigateToCustomCollection() async {

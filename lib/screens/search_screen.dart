@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../utils/snackbar_utils.dart';
 import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 
@@ -138,17 +139,9 @@ class _SearchScreenState extends State<SearchScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
-            ),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        SnackBarUtils.showSnackBar(
+          context,
+          isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
         );
       }
     }
@@ -156,16 +149,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _copyText(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Copied to clipboard! 💕'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
+    SnackBarUtils.showInfo(context, 'Copied to clipboard! 💕');
   }
 
   void _shareText(String text) {

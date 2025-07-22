@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/category.dart';
 import '../services/favorites_service.dart';
+import '../utils/snackbar_utils.dart';
 
 class TextDetailScreen extends StatefulWidget {
   final Category category;
@@ -54,19 +55,11 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
         _favoriteStates[index] = !_favoriteStates[index];
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _favoriteStates[index]
-                ? 'Added to favorites ❤️'
-                : 'Removed from favorites',
-          ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+      SnackBarUtils.showSnackBar(
+        context,
+        _favoriteStates[index]
+            ? 'Added to favorites ❤️'
+            : 'Removed from favorites',
       );
     }
   }
@@ -236,16 +229,7 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
   void _copyToClipboard(BuildContext context) {
     Clipboard.setData(
         ClipboardData(text: widget.category.texts[_currentIndex]));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Text copied to clipboard! 💕'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
+    SnackBarUtils.showSuccess(context, 'Text copied to clipboard! 💕');
   }
 
   void _shareText(BuildContext context) {

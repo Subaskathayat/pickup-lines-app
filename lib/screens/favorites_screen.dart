@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 import '../services/pickup_lines_service.dart';
+import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -182,19 +183,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         favorites.removeAt(index);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Removed from favorites'),
-          duration: const Duration(seconds: 2),
-          action: SnackBarAction(
-            label: 'Undo',
-            textColor: const Color(
-                0xFFFFABAB), // Coral pink to match heart/favorite color
-            onPressed: () async {
-              await _favoritesService.addToFavorites(pickupLine);
-              _loadFavorites(); // Reload to show the restored item
-            },
-          ),
+      SnackBarUtils.showSnackBar(
+        context,
+        'Removed from favorites',
+        action: SnackBarAction(
+          label: 'Undo',
+          textColor:
+              Colors.white, // White text for better contrast on coral pink
+          onPressed: () async {
+            await _favoritesService.addToFavorites(pickupLine);
+            _loadFavorites(); // Reload to show the restored item
+          },
         ),
       );
     }
@@ -202,13 +201,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   void _copyText(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard! 💕'),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackBarUtils.showInfo(context, 'Copied to clipboard! 💕');
   }
 
   void _shareText(String text) {
@@ -235,21 +228,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         );
       } else if (mounted) {
         // Show error if line not found in categories
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to find this line in categories'),
-            duration: Duration(seconds: 2),
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Unable to find this line in categories',
         );
       }
     } catch (e) {
       // Handle any errors
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening text detail: $e'),
-            duration: const Duration(seconds: 2),
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Error opening text detail: $e',
         );
       }
     }

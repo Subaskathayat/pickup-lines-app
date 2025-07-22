@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/snackbar_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -53,7 +54,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 : null,
           ),
-          
           const SizedBox(height: 24),
           _buildSectionHeader('Sound & Vibration'),
           _buildSwitchTile(
@@ -76,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
             },
           ),
-          
           const SizedBox(height: 24),
           _buildSectionHeader('Appearance'),
           _buildDropdownTile(
@@ -90,7 +89,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
             },
           ),
-          
           const SizedBox(height: 24),
           _buildSectionHeader('Language'),
           _buildDropdownTile(
@@ -104,7 +102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
             },
           ),
-          
           const SizedBox(height: 24),
           _buildSectionHeader('Data'),
           _buildActionTile(
@@ -119,7 +116,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.refresh,
             onTap: _resetFavorites,
           ),
-          
           const SizedBox(height: 24),
           _buildSectionHeader('About'),
           _buildInfoTile(
@@ -244,8 +240,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cache cleared successfully')),
+                SnackBarUtils.showSuccess(
+                  context,
+                  'Cache cleared successfully',
                 );
               },
               child: const Text('Clear'),
@@ -262,7 +259,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Reset Favorites'),
-          content: const Text('Are you sure you want to remove all favorite pickup lines?'),
+          content: const Text(
+              'Are you sure you want to remove all favorite pickup lines?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -271,8 +269,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Favorites reset successfully')),
+                SnackBarUtils.showSuccess(
+                  context,
+                  'Favorites reset successfully',
                 );
               },
               child: const Text('Reset'),
@@ -284,8 +283,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _checkForUpdates() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You have the latest version!')),
+    SnackBarUtils.showInfo(
+      context,
+      'You have the latest version!',
     );
   }
 }

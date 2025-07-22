@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/favorites_service.dart';
+import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
 
 class CategoryListScreen extends StatefulWidget {
@@ -268,17 +269,9 @@ class _TextCardState extends State<TextCard> {
         isFavorite = !isFavorite;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
-          ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+      SnackBarUtils.showSnackBar(
+        context,
+        isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
       );
     }
   }
@@ -286,9 +279,9 @@ class _TextCardState extends State<TextCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
         onTap: () {
@@ -302,10 +295,21 @@ class _TextCardState extends State<TextCard> {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 120, // Reverted back to original height
+          height: 130, // Increased height by 10px
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
+                const Color(0xFFFFABAB).withValues(alpha: 0.1),
+              ],
+            ),
+          ),
           child: Row(
             children: [
               Container(
@@ -332,6 +336,7 @@ class _TextCardState extends State<TextCard> {
                   widget.text,
                   style: const TextStyle(
                     fontSize: 15,
+                    color: Colors.black87,
                     height: 1.4,
                   ),
                   maxLines: 3, // Reverted back to 3 lines
@@ -353,7 +358,7 @@ class _TextCardState extends State<TextCard> {
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: isFavorite
                             ? const Color(0xFFFFABAB)
-                            : Colors.grey[400],
+                            : Colors.grey[600],
                         size: 22,
                       ),
                       padding: const EdgeInsets.all(6),
@@ -367,7 +372,7 @@ class _TextCardState extends State<TextCard> {
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 18,
-                      color: Colors.grey[400],
+                      color: Colors.grey[600],
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 import '../services/line_of_day_service.dart';
+import '../utils/snackbar_utils.dart';
 
 class PickupLineOfDayScreen extends StatefulWidget {
   const PickupLineOfDayScreen({super.key});
@@ -334,29 +335,16 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
         isFavorite = !isFavorite;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
-          ),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+      SnackBarUtils.showSnackBar(
+        context,
+        isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
       );
     }
   }
 
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: todaysLine));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    SnackBarUtils.showInfo(context, 'Copied to clipboard');
   }
 
   void _shareText() {
@@ -381,15 +369,10 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
 
       // Show success message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('New line generated! 🎉'),
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-          ),
+        SnackBarUtils.showSuccess(
+          context,
+          'New line generated! 🎉',
+          duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
@@ -398,12 +381,10 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
           isLoading = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error generating new line: $e'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Error generating new line: $e',
+          duration: const Duration(seconds: 3),
         );
       }
     }
