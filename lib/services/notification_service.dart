@@ -25,7 +25,7 @@ class NotificationService {
 
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     // iOS initialization settings
     const DarwinInitializationSettings initializationSettingsIOS =
@@ -119,7 +119,7 @@ class NotificationService {
       channelDescription: 'Daily pickup line notifications',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
       color: Color(0xFFFFABAB), // Coral pink
       playSound: true,
       enableVibration: true,
@@ -183,7 +183,7 @@ class NotificationService {
       channelDescription: 'Daily pickup line notifications',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
       color: Color(0xFFFFABAB), // Coral pink
       playSound: true,
       enableVibration: true,
