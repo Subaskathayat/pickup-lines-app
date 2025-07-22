@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-import '../data/categories_data.dart';
+import '../services/pickup_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../models/category.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -14,14 +15,17 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FavoritesService _favoritesService = FavoritesService.instance;
+  final PickupLinesService _pickupLinesService = PickupLinesService.instance;
   List<SearchResult> _searchResults = [];
   bool _isSearching = false;
   Set<String> _favoriteTexts = {};
+  List<Category> _categories = [];
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
+    _loadCategories();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -41,6 +45,24 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _pickupLinesService.loadCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+        });
+      }
+    } catch (e) {
+      // Handle error silently or show a message
+      if (mounted) {
+        setState(() {
+          _categories = [];
+        });
+      }
+    }
+  }
+
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
@@ -57,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Search through all categories
     final results = <SearchResult>[];
-    for (final category in categories) {
+    for (final category in _categories) {
       for (int i = 0; i < category.texts.length; i++) {
         final text = category.texts[i];
         if (text.toLowerCase().contains(query)) {

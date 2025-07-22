@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../services/pickup_lines_service.dart';
+import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import 'category_list_screen.dart';
 import 'favorites_screen.dart';
 import 'subscription_screen.dart';
 import 'search_screen.dart';
+import 'custom_collection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,11 +19,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Category> categories = [];
   bool isLoading = true;
+  int customLinesCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _loadCustomLinesCount();
   }
 
   Future<void> _loadCategories() async {
@@ -43,6 +46,19 @@ class _HomeScreenState extends State<HomeScreen> {
           SnackBar(content: Text('Error loading categories: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _loadCustomLinesCount() async {
+    try {
+      final count = await CustomLinesService.instance.getCustomLinesCount();
+      if (mounted) {
+        setState(() {
+          customLinesCount = count;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
     }
   }
 
@@ -136,11 +152,58 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisCount: 2,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
-                            childAspectRatio: 1.2,
+                            childAspectRatio:
+                                1.0, // Changed from 1.2 to 1.0 for more height
                           ),
-                          itemCount: categories.length,
+                          itemCount:
+                              categories.length + 2, // +2 for feature cards
                           itemBuilder: (context, index) {
-                            return CategoryCard(category: categories[index]);
+                            if (index == 0) {
+                              // Custom Collection Card
+                              return FeatureCard(
+                                title: 'Custom Collection',
+                                subtitle: 'Your personal pickup lines',
+                                icon: '✏️',
+                                count: customLinesCount,
+                                onTap: () => _navigateToCustomCollection(),
+                                gradientColors: [
+                                  const Color(0xFFE1D5E7)
+                                      .withValues(alpha: 0.4), // Light Lavender
+                                  const Color(0xFFD1C4E9)
+                                      .withValues(alpha: 0.2), // Soft Purple
+                                ],
+                              );
+                            } else if (index == 1) {
+                              // Top 100 Lines Card
+                              final top100Category = categories.firstWhere(
+                                (cat) => cat.id == 'top100',
+                                orElse: () => Category(
+                                  id: 'top100',
+                                  name: 'Top 100 Lines',
+                                  icon: '🏆',
+                                  texts: [],
+                                ),
+                              );
+                              return FeatureCard(
+                                title: 'Top 100 Lines',
+                                subtitle: 'Most favorited by all users',
+                                icon: '🏆',
+                                count: top100Category.texts.length,
+                                onTap: () =>
+                                    _navigateToCategory(top100Category),
+                              );
+                            } else {
+                              // Regular category cards
+                              final categoryIndex = index - 2;
+                              final regularCategories = categories
+                                  .where((cat) => cat.id != 'top100')
+                                  .toList();
+                              if (categoryIndex < regularCategories.length) {
+                                return CategoryCard(
+                                    category: regularCategories[categoryIndex]);
+                              }
+                              return const SizedBox.shrink();
+                            }
                           },
                         ),
             ),
@@ -194,54 +257,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showCreateCustomDialog(BuildContext context) {
-    final TextEditingController controller = TextEditingController();
+    _navigateToCustomCollection();
+  }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Create Custom Pickup Line'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter your custom pickup line...',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  Clipboard.setData(
-                      ClipboardData(text: controller.text.trim()));
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                          'Custom pickup line copied to clipboard! 💕'),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFABAB),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Copy'),
-            ),
-          ],
-        );
-      },
+  void _navigateToCustomCollection() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomCollectionScreen(),
+      ),
+    );
+    // Refresh custom lines count when returning
+    _loadCustomLinesCount();
+  }
+
+  void _navigateToCategory(Category category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CategoryListScreen(category: category),
+      ),
     );
   }
 }
@@ -304,6 +339,100 @@ class CategoryCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FeatureCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String icon;
+  final int count;
+  final VoidCallback onTap;
+  final List<Color>? gradientColors;
+
+  const FeatureCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.count,
+    required this.onTap,
+    this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors ??
+                  [
+                    const Color(0xFFFFD1DC)
+                        .withValues(alpha: 0.4), // Light Pink
+                    const Color(0xFFFFABAB)
+                        .withValues(alpha: 0.2), // Coral Pink
+                  ],
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                icon,
+                style: const TextStyle(fontSize: 32),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[600], // Same as CategoryCard
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                count > 0 ? '$count lines' : 'Get started',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[
+                      600], // Changed from red to grey to match CategoryCard
                 ),
               ),
             ],

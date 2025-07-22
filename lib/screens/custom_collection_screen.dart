@@ -1,0 +1,531 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import '../services/custom_lines_service.dart';
+import '../services/favorites_service.dart';
+
+class CustomCollectionScreen extends StatefulWidget {
+  const CustomCollectionScreen({super.key});
+
+  @override
+  State<CustomCollectionScreen> createState() => _CustomCollectionScreenState();
+}
+
+class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
+  final CustomLinesService _customLinesService = CustomLinesService.instance;
+  final FavoritesService _favoritesService = FavoritesService.instance;
+  List<String> _customLines = [];
+  Set<String> _favoriteTexts = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await _loadCustomLines();
+    await _loadFavorites();
+  }
+
+  Future<void> _loadCustomLines() async {
+    final lines = await _customLinesService.getCustomLines();
+    if (mounted) {
+      setState(() {
+        _customLines = lines;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await _favoritesService.getFavorites();
+    if (mounted) {
+      setState(() {
+        _favoriteTexts = favorites.toSet();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Custom Collection',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _showAddLineDialog,
+            icon: const Icon(Icons.add),
+            tooltip: 'Add Custom Line',
+          ),
+          if (_customLines.isNotEmpty)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'clear_all') {
+                  _showClearAllDialog();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'clear_all',
+                  child: Row(
+                    children: [
+                      Icon(Icons.clear_all, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Clear All'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _customLines.isEmpty
+              ? _buildEmptyState()
+              : _buildCustomLinesList(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddLineDialog,
+        backgroundColor: const Color(0xFFFFABAB),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.edit_note,
+            size: 80,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Custom Lines Yet',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Create your own personalized pickup lines',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _showAddLineDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Your First Line'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFABAB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomLinesList() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Colors.grey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_customLines.length} custom pickup lines',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _customLines.length,
+            itemBuilder: (context, index) {
+              final line = _customLines[index];
+              return _buildCustomLineCard(line, index);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCustomLineCard(String line, int index) {
+    final isFavorite = _favoriteTexts.contains(line);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.format_quote,
+                  color: Color(0xFFFFABAB),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    line,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _copyToClipboard(line),
+                      icon: const Icon(Icons.copy, size: 20),
+                      tooltip: 'Copy',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.grey[100],
+                        foregroundColor: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => _shareText(line),
+                      icon: const Icon(Icons.share, size: 20),
+                      tooltip: 'Share',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.grey[100],
+                        foregroundColor: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => _toggleFavorite(line),
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        size: 20,
+                        color: isFavorite ? Colors.red : Colors.grey[700],
+                      ),
+                      tooltip: isFavorite
+                          ? 'Remove from favorites'
+                          : 'Add to favorites',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.grey[100],
+                      ),
+                    ),
+                  ],
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditLineDialog(line, index);
+                    } else if (value == 'delete') {
+                      _showDeleteConfirmation(line, index);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 18),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Icon(Icons.more_vert, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddLineDialog() {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Custom Pickup Line'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter your custom pickup line...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _addCustomLine(controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFABAB),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditLineDialog(String currentLine, int index) {
+    final TextEditingController controller =
+        TextEditingController(text: currentLine);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Pickup Line'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter your pickup line...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _updateCustomLine(currentLine, controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFABAB),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(String line, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pickup Line'),
+        content: Text(
+            'Are you sure you want to delete this pickup line?\n\n"$line"'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _deleteCustomLine(line),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showClearAllDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Custom Lines'),
+        content: const Text(
+            'Are you sure you want to delete all your custom pickup lines? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: _clearAllCustomLines,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addCustomLine(String text) async {
+    if (text.trim().isEmpty) {
+      Navigator.of(context).pop();
+      _showSnackBar('Please enter a pickup line', Colors.orange);
+      return;
+    }
+
+    final success = await _customLinesService.addCustomLine(text);
+    Navigator.of(context).pop();
+
+    if (success) {
+      await _loadCustomLines();
+      _showSnackBar('Custom pickup line added! 💕', Colors.green);
+    } else {
+      _showSnackBar('This pickup line already exists', Colors.orange);
+    }
+  }
+
+  Future<void> _updateCustomLine(String oldLine, String newText) async {
+    if (newText.trim().isEmpty) {
+      Navigator.of(context).pop();
+      _showSnackBar('Please enter a pickup line', Colors.orange);
+      return;
+    }
+
+    if (oldLine == newText.trim()) {
+      Navigator.of(context).pop();
+      return; // No changes made
+    }
+
+    final success =
+        await _customLinesService.updateCustomLine(oldLine, newText);
+    Navigator.of(context).pop();
+
+    if (success) {
+      await _loadCustomLines();
+      await _loadFavorites(); // Refresh favorites in case the updated line was favorited
+      _showSnackBar('Pickup line updated! ✨', Colors.green);
+    } else {
+      _showSnackBar('Failed to update pickup line', Colors.red);
+    }
+  }
+
+  Future<void> _deleteCustomLine(String line) async {
+    final success = await _customLinesService.removeCustomLine(line);
+    Navigator.of(context).pop();
+
+    if (success) {
+      await _loadCustomLines();
+      // Remove from favorites if it was favorited
+      if (_favoriteTexts.contains(line)) {
+        await _favoritesService.removeFromFavorites(line);
+        await _loadFavorites();
+      }
+      _showSnackBar('Pickup line deleted', Colors.grey[600]!);
+    } else {
+      _showSnackBar('Failed to delete pickup line', Colors.red);
+    }
+  }
+
+  Future<void> _clearAllCustomLines() async {
+    final success = await _customLinesService.clearAllCustomLines();
+    Navigator.of(context).pop();
+
+    if (success) {
+      // Remove all custom lines from favorites
+      for (final line in _customLines) {
+        if (_favoriteTexts.contains(line)) {
+          await _favoritesService.removeFromFavorites(line);
+        }
+      }
+      await _loadCustomLines();
+      await _loadFavorites();
+      _showSnackBar('All custom lines cleared', Colors.grey[600]!);
+    } else {
+      _showSnackBar('Failed to clear custom lines', Colors.red);
+    }
+  }
+
+  Future<void> _toggleFavorite(String text) async {
+    final isFavorite = _favoriteTexts.contains(text);
+
+    if (isFavorite) {
+      await _favoritesService.removeFromFavorites(text);
+      _showSnackBar('Removed from favorites', Colors.grey[600]!);
+    } else {
+      await _favoritesService.addToFavorites(text);
+      _showSnackBar('Added to favorites! ❤️', Colors.red);
+    }
+
+    await _loadFavorites();
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    _showSnackBar('Copied to clipboard! 📋', Colors.blue);
+  }
+
+  void _shareText(String text) {
+    Share.share(text);
+  }
+
+  void _showSnackBar(String message, Color backgroundColor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+}
