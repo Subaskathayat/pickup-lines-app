@@ -179,25 +179,6 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                // Page indicator dots
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    widget.category.texts.length,
-                    (index) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentIndex == index
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey[300],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 // Action buttons row
                 Row(
                   children: [

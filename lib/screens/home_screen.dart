@@ -3,6 +3,7 @@ import '../data/categories_data.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import 'category_list_screen.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,6 +19,20 @@ class HomeScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FavoritesScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.favorite_outline),
+            tooltip: 'Favorites',
+          ),
+        ],
       ),
       drawer: const AppDrawer(),
       body: Padding(

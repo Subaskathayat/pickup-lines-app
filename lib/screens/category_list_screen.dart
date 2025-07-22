@@ -151,7 +151,8 @@ class _TextCardState extends State<TextCard> {
           );
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Container(
+          height: 120, // Increased height to 120px
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -181,29 +182,43 @@ class _TextCardState extends State<TextCard> {
                     fontSize: 15,
                     height: 1.4,
                   ),
-                  maxLines: 2,
+                  maxLines: 3, // Increased from 2 to 3 lines
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Favorite button
-              IconButton(
-                onPressed: _toggleFavorite,
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color:
-                      isFavorite ? const Color(0xFFFFABAB) : Colors.grey[400],
-                  size: 20,
+              const SizedBox(width: 12),
+              // Vertical arrangement of icons
+              SizedBox(
+                width: 48,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Favorite button
+                    IconButton(
+                      onPressed: _toggleFavorite,
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite
+                            ? const Color(0xFFFFABAB)
+                            : Colors.grey[400],
+                        size: 22,
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Open/Arrow icon
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: Colors.grey[400],
+                    ),
+                  ],
                 ),
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey[400],
               ),
             ],
           ),
