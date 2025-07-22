@@ -239,7 +239,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'A new pickup line is featured every minute for testing. Tap the button below to generate a new line and show notification!',
+                            'A new pickup line is featured daily at 9:00 AM. Tap the button below to generate a new line manually!',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,
@@ -252,14 +252,13 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Test button for generating new line and notification
+                  // Button for generating new line manually
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _generateNewLineAndNotification,
-                      icon: const Icon(Icons.notifications_active),
-                      label:
-                          const Text('Generate New Line & Show Notification'),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Generate New Line'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFABAB),
                         foregroundColor: Colors.white,
@@ -384,7 +383,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('New line generated and notification sent! 🎉'),
+            content: Text('New line generated! 🎉'),
             duration: Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
