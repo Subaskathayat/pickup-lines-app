@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../data/categories_data.dart';
+import '../services/pickup_lines_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import 'category_list_screen.dart';
@@ -8,8 +8,43 @@ import 'favorites_screen.dart';
 import 'subscription_screen.dart';
 import 'search_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<Category> categories = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final loadedCategories =
+          await PickupLinesService.instance.loadCategories();
+      setState(() {
+        categories = loadedCategories;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading categories: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,18 +119,30 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.2,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  return CategoryCard(category: categories[index]);
-                },
-              ),
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : categories.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No categories available',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        )
+                      : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.2,
+                          ),
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            return CategoryCard(category: categories[index]);
+                          },
+                        ),
             ),
           ],
         ),

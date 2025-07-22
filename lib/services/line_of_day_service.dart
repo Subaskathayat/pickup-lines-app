@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../data/categories_data.dart';
-import '../models/category.dart';
 import 'notification_service.dart';
+import 'pickup_lines_service.dart';
 
 class LineOfDayService {
   static const String _currentLineKey = 'current_line_of_day';
@@ -54,14 +53,15 @@ class LineOfDayService {
     await _notificationService.cancelAllScheduledNotifications();
 
     // Get all pickup lines from all categories
+    final allLinesWithCategories =
+        await PickupLinesService.instance.getAllPickupLinesWithCategories();
+
     List<String> allLines = [];
     List<String> categoryNames = [];
 
-    for (Category category in categories) {
-      for (String line in category.texts) {
-        allLines.add(line);
-        categoryNames.add(category.name);
-      }
+    for (var lineData in allLinesWithCategories) {
+      allLines.add(lineData['line']!);
+      categoryNames.add(lineData['category']!);
     }
 
     if (allLines.isEmpty) return;
@@ -119,14 +119,15 @@ class LineOfDayService {
     await _initPrefs();
 
     // Get all pickup lines from all categories
+    final allLinesWithCategories =
+        await PickupLinesService.instance.getAllPickupLinesWithCategories();
+
     List<String> allLines = [];
     List<String> categoryNames = [];
 
-    for (Category category in categories) {
-      for (String line in category.texts) {
-        allLines.add(line);
-        categoryNames.add(category.name);
-      }
+    for (var lineData in allLinesWithCategories) {
+      allLines.add(lineData['line']!);
+      categoryNames.add(lineData['category']!);
     }
 
     if (allLines.isEmpty) return;
