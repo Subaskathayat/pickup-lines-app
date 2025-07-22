@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/category.dart';
 import '../services/favorites_service.dart';
 
@@ -237,6 +238,25 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    // Share button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _shareText(context),
+                        icon: const Icon(Icons.share),
+                        label: const Text(
+                          'Share',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -268,6 +288,12 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
+    );
+  }
+
+  void _shareText(BuildContext context) {
+    SharePlus.instance.share(
+      ShareParams(text: widget.category.texts[_currentIndex]),
     );
   }
 }

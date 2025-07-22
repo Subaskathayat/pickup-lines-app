@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -201,14 +202,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void _shareText(String text) {
-    // For now, copy to clipboard as a fallback
-    _copyText(text);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Text copied! Share feature coming soon.'),
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+    SharePlus.instance.share(
+      ShareParams(text: text),
     );
   }
 }

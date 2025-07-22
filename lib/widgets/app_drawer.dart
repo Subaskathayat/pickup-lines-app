@@ -254,9 +254,12 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _shareApp() {
-    Share.share(
-      'Check out this amazing Pickup Lines app! Download it now and find the perfect line for any situation.',
-      subject: 'Pickup Lines App',
+    SharePlus.instance.share(
+      ShareParams(
+        text:
+            'Check out this amazing Pickup Lines app! Download it now and find the perfect line for any situation.',
+        subject: 'Pickup Lines App',
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 
 class PickupLineOfDayScreen extends StatefulWidget {
@@ -289,12 +290,8 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
   }
 
   void _shareText() {
-    // TODO: Implement share functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
+    SharePlus.instance.share(
+      ShareParams(text: todaysLine),
     );
   }
 }
