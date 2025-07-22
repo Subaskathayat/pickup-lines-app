@@ -14,8 +14,8 @@ class LineOfDayService {
   Timer? _timer;
   final NotificationService _notificationService = NotificationService.instance;
 
-  // Daily notification at 9:00 AM
-  static const int _notificationHour = 9;
+  // Daily notification at 8:00 AM
+  static const int _notificationHour = 8;
   static const int _notificationMinute = 0;
 
   // Number of daily notifications to schedule in advance (30 days)
@@ -68,7 +68,7 @@ class LineOfDayService {
 
     final random = Random();
 
-    // Calculate next notification time (next 9:00 AM)
+    // Calculate next notification time (next 8:00 AM)
     DateTime now = DateTime.now();
     DateTime nextNotificationTime = DateTime(
       now.year,
@@ -78,7 +78,7 @@ class LineOfDayService {
       _notificationMinute,
     );
 
-    // If it's already past 9:00 AM today, schedule for tomorrow
+    // If it's already past 8:00 AM today, schedule for tomorrow
     if (nextNotificationTime.isBefore(now)) {
       nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
     }
@@ -179,7 +179,7 @@ class LineOfDayService {
     await _scheduleNotifications();
   }
 
-  /// Get time until next daily update (next 9:00 AM)
+  /// Get time until next daily update (next 8:00 AM)
   Future<Duration?> getTimeUntilNextUpdate() async {
     DateTime now = DateTime.now();
     DateTime nextUpdate = DateTime(
@@ -190,7 +190,7 @@ class LineOfDayService {
       _notificationMinute,
     );
 
-    // If it's already past 9:00 AM today, get tomorrow's 9:00 AM
+    // If it's already past 8:00 AM today, get tomorrow's 8:00 AM
     if (nextUpdate.isBefore(now)) {
       nextUpdate = nextUpdate.add(const Duration(days: 1));
     }

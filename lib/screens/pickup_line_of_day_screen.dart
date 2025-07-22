@@ -240,7 +240,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'A new pickup line is featured daily at 9:00 AM. Tap the button below to generate a new line manually!',
+                            'A new pickup line is featured daily at 8:00 AM. Tap the button below to generate a new line manually!',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,

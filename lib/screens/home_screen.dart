@@ -3,6 +3,7 @@ import '../services/pickup_lines_service.dart';
 import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/age_verification_dialog.dart';
 import '../utils/snackbar_utils.dart';
 import 'category_list_screen.dart';
 import 'favorites_screen.dart';
@@ -330,12 +331,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadCustomLinesCount();
   }
 
-  void _navigateToCategory(Category category) {
-    Navigator.push(
+  Future<void> _navigateToCategory(Category category) async {
+    // Check if age verification is needed for mature content
+    await AgeVerificationUtils.checkAndShow(
       context,
-      MaterialPageRoute(
-        builder: (context) => CategoryListScreen(category: category),
-      ),
+      category.name,
+      () {
+        // Navigate to category after age verification (if needed)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CategoryListScreen(category: category),
+          ),
+        );
+      },
     );
   }
 }
@@ -353,12 +362,19 @@ class CategoryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          // Use age verification dialog for mature content
+          await AgeVerificationUtils.checkAndShow(
             context,
-            MaterialPageRoute(
-              builder: (context) => CategoryListScreen(category: category),
-            ),
+            category.name,
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CategoryListScreen(category: category),
+                ),
+              );
+            },
           );
         },
         borderRadius: BorderRadius.circular(16),

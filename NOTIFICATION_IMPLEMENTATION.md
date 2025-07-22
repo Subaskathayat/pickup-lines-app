@@ -15,7 +15,7 @@ We implemented a robust daily notification system that works reliably even when 
 
 ### Key Changes:
 - **Replaced Timer.periodic()** with scheduled notifications using `flutter_local_notifications`
-- **Daily schedule**: Changed from 30-second testing intervals to professional daily notifications at 9:00 AM
+- **Daily schedule**: Changed from 30-second testing intervals to professional daily notifications at 8:00 AM
 - **Background delivery**: Uses Android's native notification scheduling system
 - **Advance scheduling**: Pre-schedules 30 days of notifications to ensure continuous delivery
 - **Timezone awareness**: Proper timezone handling for accurate delivery times
@@ -97,8 +97,8 @@ Future<void> scheduleNotification({
 
 **Configuration:**
 ```dart
-// Daily notification at 9:00 AM
-static const int _notificationHour = 9;
+// Daily notification at 8:00 AM
+static const int _notificationHour = 8;
 static const int _notificationMinute = 0;
 
 // Number of daily notifications to schedule in advance (30 days)
@@ -110,15 +110,15 @@ static const int _daysToSchedule = 30;
 Future<void> _scheduleNotifications() async {
   // Cancel existing notifications
   await _notificationService.cancelAllScheduledNotifications();
-  
-  // Calculate next 9:00 AM
+
+  // Calculate next 8:00 AM
   DateTime now = DateTime.now();
   DateTime nextNotificationTime = DateTime(
     now.year, now.month, now.day,
     _notificationHour, _notificationMinute,
   );
-  
-  // If past 9:00 AM today, schedule for tomorrow
+
+  // If past 8:00 AM today, schedule for tomorrow
   if (nextNotificationTime.isBefore(now)) {
     nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
   }
@@ -168,7 +168,7 @@ Future<void> _scheduleNotifications() async {
 ## User Experience
 
 ### Daily Flow:
-1. **9:00 AM Daily**: User receives pickup line notification
+1. **8:00 AM Daily**: User receives pickup line notification
 2. **Automatic**: No user action required
 3. **30-Day Buffer**: Continuous notifications for a month without opening app
 4. **Manual Override**: User can generate new lines manually via the app
@@ -215,3 +215,14 @@ timezone: ^0.9.4
 - If timezone issues: Verify `tz.initializeTimeZones()` is called
 
 This implementation provides a robust, professional daily notification system that works reliably across all Android scenarios.
+
+## Recent Changes
+
+### Notification Time Update (Latest)
+- **Changed notification time**: From 9:00 AM to 8:00 AM daily
+- **Reason**: Adjusted to provide users with pickup lines earlier in the morning
+- **Files modified**:
+  - `lib/services/line_of_day_service.dart`: Updated `_notificationHour` constant from 9 to 8
+  - `NOTIFICATION_IMPLEMENTATION.md`: Updated documentation to reflect 8:00 AM schedule
+- **Impact**: All future scheduled notifications will now be delivered at 8:00 AM instead of 9:00 AM
+- **Note**: Existing scheduled notifications may need to be rescheduled by restarting the app or calling the initialization method
