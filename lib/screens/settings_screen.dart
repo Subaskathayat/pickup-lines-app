@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../utils/snackbar_utils.dart';
 import '../services/permission_service.dart';
 import '../services/daily_notification_service.dart';
+
 import '../widgets/permission_dialog.dart';
+import '../widgets/theme_selection_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool notificationsEnabled = true;
   bool dailyLineNotification = true;
-  String selectedTheme = 'Light';
   String selectedLanguage = 'English';
   String notificationPermissionStatus = 'Loading...';
 
@@ -90,17 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (!notificationsEnabled) _buildPermissionActionTile(),
           const SizedBox(height: 24),
           _buildSectionHeader('Appearance'),
-          _buildDropdownTile(
-            title: 'Theme',
-            subtitle: 'Choose app theme',
-            value: selectedTheme,
-            items: ['Light', 'Dark', 'System'],
-            onChanged: (value) {
-              setState(() {
-                selectedTheme = value!;
-              });
-            },
-          ),
+          const ThemeSelectionWidget(),
           const SizedBox(height: 24),
           _buildSectionHeader('Language'),
           _buildDropdownTile(
@@ -151,10 +142,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(bottom: 8, top: 8),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Color(0xFFFFABAB),
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
@@ -173,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle: Text(subtitle),
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFFFFABAB),
+        activeColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
@@ -213,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFFFABAB)),
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
@@ -230,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFFFABAB)),
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
         title: Text(title),
         subtitle: Text(subtitle),
       ),
@@ -407,8 +398,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: ElevatedButton(
             onPressed: _requestNotificationPermission,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFABAB),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

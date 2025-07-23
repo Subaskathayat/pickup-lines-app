@@ -24,23 +24,24 @@ class NotificationPermissionDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFABAB).withOpacity(0.1),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_active,
-              color: Color(0xFFFFABAB),
+              color: Theme.of(context).colorScheme.primary,
               size: 24,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Stay Updated! 💕',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A4A4A),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -50,11 +51,11 @@ class NotificationPermissionDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Get daily pickup lines delivered right to your phone!',
             style: TextStyle(
               fontSize: 16,
-              color: Color(0xFF4A4A4A),
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
@@ -80,23 +81,26 @@ class NotificationPermissionDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Theme.of(context)
+                  .colorScheme
+                  .secondary
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline,
-                  color: Colors.blue,
+                  color: Theme.of(context).colorScheme.secondary,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'We respect your privacy. Notifications are only for app features.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
@@ -230,23 +234,24 @@ class PermissionDeniedDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_off,
-              color: Colors.orange,
+              color: Theme.of(context).colorScheme.tertiary,
               size: 24,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Notifications Disabled',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF4A4A4A),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

@@ -78,7 +78,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Icon(
             Icons.favorite_border,
             size: 80,
-            color: Colors.grey[400],
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
           Text(
@@ -86,7 +87,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
@@ -95,7 +99,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[500],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -122,8 +129,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
-                const Color(0xFFFFABAB).withValues(alpha: 0.1),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               ],
             ),
           ),
@@ -132,10 +139,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -144,9 +151,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 children: [
                   IconButton(
                     onPressed: () => _removeFavorite(index),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.favorite,
-                      color: Color(0xFFFFABAB),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     tooltip: 'Remove from favorites',
                   ),
@@ -154,7 +161,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     onPressed: () => _copyText(text),
                     icon: Icon(
                       Icons.copy,
-                      color: Colors.grey[600],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                     tooltip: 'Copy text',
                   ),
@@ -162,7 +172,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     onPressed: () => _shareText(text),
                     icon: Icon(
                       Icons.share,
-                      color: Colors.grey[600],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                     tooltip: 'Share text',
                   ),
@@ -189,8 +202,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         'Removed from favorites',
         action: SnackBarAction(
           label: 'Undo',
-          textColor:
-              Colors.white, // White text for better contrast on coral pink
+          textColor: Theme.of(context).colorScheme.onPrimary,
           onPressed: () async {
             await _favoritesService.addToFavorites(pickupLine);
             _loadFavorites(); // Reload to show the restored item

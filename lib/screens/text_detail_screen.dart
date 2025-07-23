@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/category.dart';
 import '../services/favorites_service.dart';
+import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
 
 class TextDetailScreen extends StatefulWidget {
@@ -64,6 +65,27 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
     }
   }
 
+  // Enhanced animation methods for smoother transitions
+  void _animateToNextPage() {
+    if (_currentIndex < widget.category.texts.length - 1) {
+      _pageController.animateToPage(
+        _currentIndex + 1,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
+  void _animateToPreviousPage() {
+    if (_currentIndex > 0) {
+      _pageController.animateToPage(
+        _currentIndex - 1,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -87,8 +109,11 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                     ? Icons.favorite
                     : Icons.favorite_border,
                 color: _favoriteStates[_currentIndex]
-                    ? const Color(0xFFFFABAB)
-                    : Colors.grey[600],
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
               ),
             ),
           Center(
@@ -97,7 +122,10 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
               child: Text(
                 '${_currentIndex + 1}/${widget.category.texts.length}',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   fontSize: 14,
                 ),
               ),
@@ -108,101 +136,119 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
       body: Column(
         children: [
           Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
+            child: GestureDetector(
+              onTap: () {
+                // Add subtle haptic feedback on tap
+                HapticFeedback.lightImpact();
               },
-              itemCount: widget.category.texts.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1.0, // 1:1 aspect ratio for square format
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
+              child: PageView.builder(
+                controller: _pageController,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                pageSnapping: true,
+                onPageChanged: (index) {
+                  // Add haptic feedback on page change
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: widget.category.texts.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: 1.0, // 1:1 aspect ratio for square format
+                        child: Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFFFFD1DC)
-                                    .withValues(alpha: 0.2), // Light Pink
-                                const Color(0xFFB0E0E6)
-                                    .withValues(alpha: 0.1), // Powder Blue
-                              ],
-                            ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.format_quote,
-                                size: 40,
-                                color: Color(0xFFFFABAB), // Coral Pink
+                          child: Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: ThemeService()
+                                    .currentThemeData
+                                    .gradientColors
+                                    .map(
+                                        (color) => color.withValues(alpha: 0.2))
+                                    .toList(),
                               ),
-                              const SizedBox(height: 24),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    widget.category.texts[index],
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      height: 1.5,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.format_quote,
+                                  size: 40,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(height: 24),
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      widget.category.texts[index],
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        height: 1.5,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 24),
+                                const SizedBox(height: 24),
 
-                              // Action buttons inside the card (matching pickup line of day layout)
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildActionButton(
-                                    icon: _favoriteStates.isNotEmpty &&
-                                            _favoriteStates[index]
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    label: 'Favorite',
-                                    color: const Color(0xFFFFABAB),
-                                    onPressed: () => _toggleFavorite(index),
-                                  ),
-                                  _buildActionButton(
-                                    icon: Icons.copy,
-                                    label: 'Copy',
-                                    color: Colors.blue,
-                                    onPressed: () => _copyToClipboard(context),
-                                  ),
-                                  _buildActionButton(
-                                    icon: Icons.share,
-                                    label: 'Share',
-                                    color: Colors.green,
-                                    onPressed: () => _shareText(context),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                // Action buttons inside the card (matching pickup line of day layout)
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    _buildActionButton(
+                                      icon: _favoriteStates.isNotEmpty &&
+                                              _favoriteStates[index]
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      label: 'Favorite',
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      onPressed: () => _toggleFavorite(index),
+                                    ),
+                                    _buildActionButton(
+                                      icon: Icons.copy,
+                                      label: 'Copy',
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      onPressed: () =>
+                                          _copyToClipboard(context),
+                                    ),
+                                    _buildActionButton(
+                                      icon: Icons.share,
+                                      label: 'Share',
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .tertiary,
+                                      onPressed: () => _shareText(context),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           Padding(
@@ -214,7 +260,10 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                 Text(
                   'Swipe left or right for more texts',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),

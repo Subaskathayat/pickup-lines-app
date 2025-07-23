@@ -1,63 +1,58 @@
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'services/line_of_day_service.dart';
+import 'services/theme_service.dart';
+import 'services/premium_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize the Line of Day service
+    // Initialize services
     await LineOfDayService.instance.initialize();
+    await ThemeService().initialize();
+    await PremiumService().initialize();
   } catch (e) {
-    // Continue even if Line of Day service fails
-    debugPrint('Line of Day service initialization failed: $e');
+    // Continue even if service initialization fails
+    debugPrint('Service initialization failed: $e');
   }
 
   runApp(const FlirtyTextApp());
 }
 
-class FlirtyTextApp extends StatelessWidget {
+class FlirtyTextApp extends StatefulWidget {
   const FlirtyTextApp({super.key});
+
+  @override
+  State<FlirtyTextApp> createState() => _FlirtyTextAppState();
+}
+
+class _FlirtyTextAppState extends State<FlirtyTextApp> {
+  final ThemeService _themeService = ThemeService();
+
+  @override
+  void initState() {
+    super.initState();
+    _themeService.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _themeService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {
+      // Rebuild the app with the new theme
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pickup Lines',
-      theme: ThemeData(
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFFFFABAB), // Coral Pink
-          secondary: Color(0xFFB0E0E6), // Powder Blue
-          surface: Color(0xFFFFF0F5), // Blush White
-          onPrimary: Color(0xFF4A4A4A), // Dark Gray
-          onSecondary: Color(0xFF4A4A4A), // Dark Gray
-          onSurface: Color(0xFF4A4A4A), // Dark Gray
-        ),
-        scaffoldBackgroundColor: const Color(0xFFFFF0F5), // Blush White
-        useMaterial3: true,
-        fontFamily: 'Inter',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Color(0xFF4A4A4A),
-          elevation: 0,
-        ),
-        cardTheme: const CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFABAB), // Coral Pink
-            foregroundColor: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
+      theme: _themeService.currentThemeData.themeData,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );

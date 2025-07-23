@@ -7,12 +7,16 @@ import '../screens/settings_screen.dart';
 import '../screens/privacy_policy_screen.dart';
 import '../screens/terms_conditions_screen.dart';
 import '../screens/subscription_screen.dart';
+import '../services/theme_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeService = ThemeService();
+    final currentTheme = themeService.currentThemeData;
+
     return Drawer(
       child: Container(
         decoration: BoxDecoration(
@@ -20,9 +24,8 @@ class AppDrawer extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFFFABAB)
-                  .withValues(alpha: 0.1), // Light Coral Pink
-              const Color(0xFFFFF0F5), // Blush White
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
         ),
@@ -30,30 +33,27 @@ class AppDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFFFABAB), // Coral Pink
-                    Color(0xFFFFD1DC), // Light Pink
-                  ],
+                  colors: currentTheme.gradientColors.take(2).toList(),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.favorite,
                     size: 48,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Pickup Lines',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -61,7 +61,10 @@ class AppDrawer extends StatelessWidget {
                   Text(
                     'Find your perfect line',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -175,12 +178,12 @@ class AppDrawer extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFABAB).withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
-          color: const Color(0xFFFFABAB),
+          color: Theme.of(context).colorScheme.primary,
           size: 20,
         ),
       ),

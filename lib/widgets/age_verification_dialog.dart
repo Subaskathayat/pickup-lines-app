@@ -106,23 +106,24 @@ class _AgeVerificationDialogState extends State<AgeVerificationDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.warning,
-              color: Colors.orange,
+              color: Theme.of(context).colorScheme.tertiary,
               size: 24,
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Age Verification',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -134,9 +135,9 @@ class _AgeVerificationDialogState extends State<AgeVerificationDialog> {
         children: [
           Text(
             'The "${widget.categoryName}" category contains adult content with mature language.',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.4,
             ),
           ),
@@ -144,28 +145,29 @@ class _AgeVerificationDialogState extends State<AgeVerificationDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.red.withValues(alpha: 0.3),
+                color:
+                    Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.person,
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                   size: 20,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'You must be 18+ years old to view this content.',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.red,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ),
@@ -184,12 +186,12 @@ class _AgeVerificationDialogState extends State<AgeVerificationDialog> {
                 },
                 activeColor: const Color(0xFFFFABAB),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
                   "Don't ask me again",
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -211,8 +213,8 @@ class _AgeVerificationDialogState extends State<AgeVerificationDialog> {
         ElevatedButton(
           onPressed: _handleContinue,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFABAB),
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

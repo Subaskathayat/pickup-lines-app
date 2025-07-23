@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Utility class for managing SnackBars globally to prevent queuing issues
-/// All SnackBars use the app's coral pink theme for visual consistency
+/// All SnackBars use theme-aware colors for visual consistency
 class SnackBarUtils {
-  /// App's primary coral pink color for consistent SnackBar styling
-  static const Color _primarySnackBarColor = Color(0xFFFFABAB);
-
   /// Shows a SnackBar and clears any existing ones to prevent queuing
   static void showSnackBar(
     BuildContext context,
@@ -30,7 +27,8 @@ class SnackBarUtils {
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: backgroundColor ?? _primarySnackBarColor,
+        backgroundColor:
+            backgroundColor ?? Theme.of(context).colorScheme.primary,
         duration: duration,
         behavior: behavior,
         shape: RoundedRectangleBorder(
@@ -41,7 +39,7 @@ class SnackBarUtils {
     );
   }
 
-  /// Shows a success SnackBar with coral pink background
+  /// Shows a success SnackBar with theme primary color background
   static void showSuccess(
     BuildContext context,
     String message, {
@@ -50,13 +48,13 @@ class SnackBarUtils {
     showSnackBar(
       context,
       message,
-      backgroundColor: _primarySnackBarColor,
-      textColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      textColor: Theme.of(context).colorScheme.onPrimary,
       duration: duration,
     );
   }
 
-  /// Shows an error SnackBar with coral pink background
+  /// Shows an error SnackBar with error color background
   static void showError(
     BuildContext context,
     String message, {
@@ -65,13 +63,13 @@ class SnackBarUtils {
     showSnackBar(
       context,
       message,
-      backgroundColor: _primarySnackBarColor,
-      textColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.error,
+      textColor: Theme.of(context).colorScheme.onError,
       duration: duration,
     );
   }
 
-  /// Shows a warning SnackBar with coral pink background
+  /// Shows a warning SnackBar with theme tertiary color background
   static void showWarning(
     BuildContext context,
     String message, {
@@ -80,13 +78,13 @@ class SnackBarUtils {
     showSnackBar(
       context,
       message,
-      backgroundColor: _primarySnackBarColor,
-      textColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.tertiary,
+      textColor: Theme.of(context).colorScheme.onSurface,
       duration: duration,
     );
   }
 
-  /// Shows an info SnackBar with coral pink background
+  /// Shows an info SnackBar with theme secondary color background
   static void showInfo(
     BuildContext context,
     String message, {
@@ -95,14 +93,14 @@ class SnackBarUtils {
     showSnackBar(
       context,
       message,
-      backgroundColor: _primarySnackBarColor,
-      textColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.secondary,
+      textColor: Theme.of(context).colorScheme.onSecondary,
       duration: duration,
     );
   }
 
-  /// Shows a SnackBar with coral pink background (maintains backward compatibility)
-  /// Note: backgroundColor parameter is ignored to ensure consistency
+  /// Shows a SnackBar with theme primary color background (maintains backward compatibility)
+  /// Note: backgroundColor parameter is ignored to ensure theme consistency
   static void showCustom(
     BuildContext context,
     String message,
@@ -113,8 +111,9 @@ class SnackBarUtils {
     showSnackBar(
       context,
       message,
-      backgroundColor: _primarySnackBarColor, // Always use coral pink
-      textColor: Colors.white,
+      backgroundColor:
+          Theme.of(context).colorScheme.primary, // Always use theme primary
+      textColor: Theme.of(context).colorScheme.onPrimary,
       duration: duration,
       action: action,
     );

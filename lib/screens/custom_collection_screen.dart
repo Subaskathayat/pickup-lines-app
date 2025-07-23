@@ -102,8 +102,8 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
               : _buildCustomLinesList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddLineDialog,
-        backgroundColor: const Color(0xFFFFABAB),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -113,10 +113,11 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.edit_note,
             size: 80,
-            color: Colors.grey,
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
           Text(
@@ -124,7 +125,10 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
@@ -133,7 +137,10 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[500],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 24),
@@ -233,10 +240,10 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
                   Expanded(
                     child: Text(
                       line,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: Theme.of(context).colorScheme.onSurface,
                         height: 1.4,
                       ),
                     ),
@@ -309,7 +316,11 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
                         ),
                       ),
                     ],
-                    child: Icon(Icons.more_vert, color: Colors.grey[600]),
+                    child: Icon(Icons.more_vert,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -344,8 +355,8 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
           ElevatedButton(
             onPressed: () => _addCustomLine(controller.text),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFABAB),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: const Text('Add'),
           ),
@@ -379,8 +390,8 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
           ElevatedButton(
             onPressed: () => _updateCustomLine(currentLine, controller.text),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFABAB),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: const Text('Update'),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/custom_lines_service.dart';
 import '../services/permission_flow_service.dart';
+import '../services/theme_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/age_verification_dialog.dart';
@@ -143,13 +144,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildQuickActionButton(
                   icon: Icons.search,
                   label: 'Search',
-                  color: Colors.grey[600]!,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   onPressed: () => _navigateToSearch(context),
                 ),
                 _buildQuickActionButton(
                   icon: Icons.edit,
                   label: 'Your Lines',
-                  color: Colors.grey[600]!,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   onPressed: () => _showCreateCustomDialog(context),
                 ),
               ],
@@ -160,7 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 24),
@@ -197,10 +207,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 count: customLinesCount,
                                 onTap: () => _navigateToCustomCollection(),
                                 gradientColors: [
-                                  const Color(0xFFE1D5E7)
-                                      .withValues(alpha: 0.4), // Light Lavender
-                                  const Color(0xFFD1C4E9)
-                                      .withValues(alpha: 0.2), // Soft Purple
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .tertiary
+                                      .withValues(alpha: 0.4),
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .tertiary
+                                      .withValues(alpha: 0.2),
                                 ],
                               );
                             } else if (index == 1) {
@@ -324,8 +338,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () => _addCustomLine(controller.text),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFABAB),
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: const Text('Add'),
           ),
@@ -427,10 +441,11 @@ class CategoryCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFFFFD1DC).withValues(alpha: 0.3), // Light Pink
-                const Color(0xFFFFABAB).withValues(alpha: 0.1), // Coral Pink
-              ],
+              colors: ThemeService()
+                  .currentThemeData
+                  .gradientColors
+                  .map((color) => color.withValues(alpha: 0.3))
+                  .toList(),
             ),
           ),
           child: Column(
@@ -444,10 +459,10 @@ class CategoryCard extends StatelessWidget {
               Text(
                 category.name,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
@@ -455,7 +470,10 @@ class CategoryCard extends StatelessWidget {
                 '${category.texts.length} lines',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -502,12 +520,11 @@ class FeatureCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: gradientColors ??
-                  [
-                    const Color(0xFFFFD1DC)
-                        .withValues(alpha: 0.4), // Light Pink
-                    const Color(0xFFFFABAB)
-                        .withValues(alpha: 0.2), // Coral Pink
-                  ],
+                  ThemeService()
+                      .currentThemeData
+                      .gradientColors
+                      .map((color) => color.withValues(alpha: 0.3))
+                      .toList(),
             ),
           ),
           child: Column(
@@ -524,10 +541,10 @@ class FeatureCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -538,7 +555,10 @@ class FeatureCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey[600], // Same as CategoryCard
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   height: 1.2,
                 ),
               ),
@@ -548,8 +568,10 @@ class FeatureCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[
-                      600], // Changed from red to grey to match CategoryCard
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],

@@ -176,10 +176,21 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search pickup lines...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFFFABAB)),
+                hintStyle: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
+                ),
+                prefixIcon: Icon(Icons.search,
+                    color: Theme.of(context).colorScheme.primary),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: Icon(Icons.clear,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6)),
                         onPressed: () {
                           _searchController.clear();
                         },
@@ -187,15 +198,19 @@ class _SearchScreenState extends State<SearchScreen> {
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide:
-                      const BorderSide(color: Color(0xFFFFABAB), width: 2),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary, width: 2),
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Theme.of(context).colorScheme.surface,
+              ),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textInputAction: TextInputAction.search,
             ),
@@ -220,9 +235,9 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (_isSearching) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
-          color: Color(0xFFFFABAB),
+          color: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -257,7 +272,8 @@ class _SearchScreenState extends State<SearchScreen> {
           Icon(
             icon,
             size: 80,
-            color: Colors.grey[400],
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
           Text(
@@ -265,7 +281,10 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
@@ -274,7 +293,10 @@ class _SearchScreenState extends State<SearchScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[500],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -308,7 +330,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   result.category,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -318,10 +343,16 @@ class _SearchScreenState extends State<SearchScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE1D5E7).withValues(alpha: 0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .tertiary
+                          .withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFFD1C4E9).withValues(alpha: 0.8),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .tertiary
+                            .withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
@@ -329,7 +360,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       'CUSTOM',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.purple[700],
+                        color: Theme.of(context).colorScheme.tertiary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -342,10 +373,10 @@ class _SearchScreenState extends State<SearchScreen> {
             // Pickup line text
             Text(
               result.text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -357,19 +388,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 _buildActionButton(
                   icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                   label: 'Favorite',
-                  color: const Color(0xFFFFABAB),
+                  color: Theme.of(context).colorScheme.primary,
                   onPressed: () => _toggleFavorite(result.text),
                 ),
                 _buildActionButton(
                   icon: Icons.copy,
                   label: 'Copy',
-                  color: Colors.blue,
+                  color: Theme.of(context).colorScheme.secondary,
                   onPressed: () => _copyText(result.text),
                 ),
                 _buildActionButton(
                   icon: Icons.share,
                   label: 'Share',
-                  color: Colors.green,
+                  color: Theme.of(context).colorScheme.tertiary,
                   onPressed: () => _shareText(result.text),
                 ),
               ],

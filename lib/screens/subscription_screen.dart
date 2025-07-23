@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/premium_service.dart';
 import '../utils/snackbar_utils.dart';
 
 class SubscriptionScreen extends StatelessWidget {
@@ -26,12 +27,12 @@ class SubscriptionScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFFFABAB), // Coral Pink
-                    Color(0xFFFFD1DC), // Light Pink
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.tertiary,
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -118,19 +119,23 @@ class SubscriptionScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             _buildPricingCard(
+              context,
               title: 'Monthly',
               price: '\$2.99',
               period: '/month',
               description: 'Perfect for trying out premium features',
               isPopular: false,
+              onTap: () => _handleMonthlyTap(context),
             ),
             const SizedBox(height: 12),
             _buildPricingCard(
+              context,
               title: 'Yearly',
               price: '\$19.99',
               period: '/year',
               description: 'Best value - Save 44%!',
               isPopular: true,
+              onTap: () => _handleYearlyTap(context),
             ),
 
             const SizedBox(height: 32),
@@ -226,89 +231,102 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPricingCard({
+  Widget _buildPricingCard(
+    BuildContext context, {
     required String title,
     required String price,
     required String period,
     required String description,
     required bool isPopular,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isPopular
-            ? const Color(0xFFFFABAB).withValues(alpha: 0.1)
-            : Colors.white,
-        border: Border.all(
-          color: isPopular ? const Color(0xFFFFABAB) : Colors.grey.shade300,
-          width: isPopular ? 2 : 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isPopular
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+              : Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: isPopular
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline,
+            width: isPopular ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(16),
         ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              if (isPopular)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFABAB),
-                    borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  child: const Text(
-                    'POPULAR',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                ),
+                if (isPopular)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'POPULAR',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                price,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFFABAB),
-                ),
-              ),
-              Text(
-                period,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  price,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  period,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -320,5 +338,36 @@ class SubscriptionScreen extends StatelessWidget {
       'Subscription feature coming soon!',
       const Color(0xFFFFABAB),
     );
+  }
+
+  // Temporary premium testing functionality
+  void _handleYearlyTap(BuildContext context) async {
+    try {
+      await PremiumService().grantPremiumAccess();
+      SnackBarUtils.showSuccess(
+        context,
+        '🎉 Premium access granted! (Testing Mode)',
+      );
+    } catch (e) {
+      SnackBarUtils.showError(
+        context,
+        'Failed to grant premium access: $e',
+      );
+    }
+  }
+
+  void _handleMonthlyTap(BuildContext context) async {
+    try {
+      await PremiumService().revokePremiumAccess();
+      SnackBarUtils.showInfo(
+        context,
+        '🔒 Premium access revoked! (Testing Mode)',
+      );
+    } catch (e) {
+      SnackBarUtils.showError(
+        context,
+        'Failed to revoke premium access: $e',
+      );
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/favorites_service.dart';
+import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
 
@@ -70,7 +71,10 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                         Text(
                           '${_texts.length} pickup lines',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
@@ -146,16 +150,16 @@ class _ScrollAnimatedItemState extends State<ScrollAnimatedItem>
     super.initState();
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 250),
       vsync: this,
     );
 
     _slideAnimation = Tween<double>(
-      begin: 250.0, // Start 250px to the right
+      begin: 200.0, // Reduced from 250px for faster entry
       end: 0.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutQuart,
+      curve: Curves.easeOutCubic, // More responsive curve
     ));
 
     _fadeAnimation = Tween<double>(
@@ -163,7 +167,8 @@ class _ScrollAnimatedItemState extends State<ScrollAnimatedItem>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.8,
+          curve: Curves.easeOutCubic), // Faster fade-in
     ));
 
     // Listen to scroll changes
@@ -201,7 +206,9 @@ class _ScrollAnimatedItemState extends State<ScrollAnimatedItem>
       _hasAnimated = true;
 
       // Add a small delay based on index for subtle staggering
-      final delay = Duration(milliseconds: (widget.index % 3) * 50);
+      final delay = Duration(
+          milliseconds:
+              (widget.index % 3) * 25); // Reduced delay for faster response
       Future.delayed(delay, () {
         if (mounted) {
           _animationController.forward();
@@ -304,10 +311,11 @@ class _TextCardState extends State<TextCard> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
-                const Color(0xFFFFABAB).withValues(alpha: 0.1),
-              ],
+              colors: ThemeService()
+                  .currentThemeData
+                  .gradientColors
+                  .map((color) => color.withValues(alpha: 0.3))
+                  .toList(),
             ),
           ),
           child: Row(
@@ -334,9 +342,9 @@ class _TextCardState extends State<TextCard> {
               Expanded(
                 child: Text(
                   widget.text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.4,
                   ),
                   maxLines: 3, // Reverted back to 3 lines
@@ -357,8 +365,11 @@ class _TextCardState extends State<TextCard> {
                       icon: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                         color: isFavorite
-                            ? const Color(0xFFFFABAB)
-                            : Colors.grey[600],
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                         size: 22,
                       ),
                       padding: const EdgeInsets.all(6),
@@ -372,7 +383,10 @@ class _TextCardState extends State<TextCard> {
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 18,
-                      color: Colors.grey[600],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ],
                 ),

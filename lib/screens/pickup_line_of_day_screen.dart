@@ -76,19 +76,22 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
         elevation: 0,
       ),
       body: isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
-                    color: Color(0xFFFFABAB),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     'Loading your daily pickup line...',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -104,7 +107,10 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFABAB).withValues(alpha: 0.1),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -162,28 +168,35 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                const Color(0xFFFFD1DC).withValues(alpha: 0.4),
-                                const Color(0xFFFFABAB).withValues(alpha: 0.2),
-                                Colors.white,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.4),
+                                Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.2),
+                                Theme.of(context).colorScheme.surface,
                               ],
                             ),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.format_quote,
                                 size: 48,
-                                color: Color(0xFFFFABAB),
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(height: 24),
                               Text(
                                 todaysLine,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                   height: 1.4,
                                 ),
                               ),
@@ -199,19 +212,22 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                                         ? Icons.favorite
                                         : Icons.favorite_border,
                                     label: 'Favorite',
-                                    color: const Color(0xFFFFABAB),
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     onPressed: _toggleFavorite,
                                   ),
                                   _buildActionButton(
                                     icon: Icons.copy,
                                     label: 'Copy',
-                                    color: Colors.blue,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                     onPressed: _copyToClipboard,
                                   ),
                                   _buildActionButton(
                                     icon: Icons.share,
                                     label: 'Share',
-                                    color: Colors.green,
+                                    color:
+                                        Theme.of(context).colorScheme.tertiary,
                                     onPressed: _shareText,
                                   ),
                                 ],
@@ -261,8 +277,9 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                       icon: const Icon(Icons.refresh),
                       label: const Text('Generate New Line'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFABAB),
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
