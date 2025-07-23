@@ -119,7 +119,7 @@ class SubscriptionScreen extends StatelessWidget {
 
             _buildPricingCard(
               title: 'Monthly',
-              price: '\$7.99',
+              price: '\$2.99',
               period: '/month',
               description: 'Perfect for trying out premium features',
               isPopular: false,
@@ -127,9 +127,9 @@ class SubscriptionScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _buildPricingCard(
               title: 'Yearly',
-              price: '\$68.99',
+              price: '\$19.99',
               period: '/year',
-              description: 'Best value - Save 28%!',
+              description: 'Best value - Save 44%!',
               isPopular: true,
             ),
 
