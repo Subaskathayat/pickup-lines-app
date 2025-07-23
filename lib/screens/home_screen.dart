@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/custom_lines_service.dart';
+import '../services/permission_flow_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/age_verification_dialog.dart';
@@ -10,6 +11,7 @@ import 'favorites_screen.dart';
 import 'subscription_screen.dart';
 import 'search_screen.dart';
 import 'custom_collection_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,6 +31,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadCategories();
     _loadCustomLinesCount();
+    _checkFirstLaunchPermission();
+  }
+
+  /// Check and request permission on first launch
+  Future<void> _checkFirstLaunchPermission() async {
+    // Add a small delay to ensure the UI is fully loaded
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (mounted) {
+      await PermissionFlowService()
+          .checkAndRequestPermissionOnFirstLaunch(context);
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -99,8 +113,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             },
-            icon: const Icon(Icons.favorite_outline),
+            icon: const Icon(Icons.favorite),
             tooltip: 'Favorites',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
           ),
         ],
       ),
@@ -251,16 +277,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToSearch(BuildContext context) {
+  void _navigateToSearch(BuildContext context) async {
+    // Check permission flow on user interaction
+    await PermissionFlowService().checkAndRequestPermissionIfNeeded(context);
+
+    if (!mounted) return;
+
     Navigator.push(
-      context,
+      this.context,
       MaterialPageRoute(
         builder: (context) => const SearchScreen(),
       ),
     );
   }
 
-  void _showCreateCustomDialog(BuildContext context) {
+  void _showCreateCustomDialog(BuildContext context) async {
+    // Check permission flow on user interaction
+    await PermissionFlowService().checkAndRequestPermissionIfNeeded(context);
+
+    if (!mounted) return;
+
     _showAddLineDialog();
   }
 
@@ -332,6 +368,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _navigateToCategory(Category category) async {
+    // Check permission flow on user interaction
+    await PermissionFlowService().checkAndRequestPermissionIfNeeded(context);
+
+    // Check if widget is still mounted after async operation
+    if (!mounted) return;
+
     // Check if age verification is needed for mature content
     await AgeVerificationUtils.checkAndShow(
       context,

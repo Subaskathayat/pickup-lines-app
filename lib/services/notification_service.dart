@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'permission_service.dart';
 
 class NotificationService {
   static NotificationService? _instance;
@@ -18,29 +19,29 @@ class NotificationService {
     return _instance!;
   }
 
-  /// Initialize the notification service
+  /// Initialize the notification service without requesting permissions
   Future<void> initialize() async {
     // Initialize timezone data
     tz.initializeTimeZones();
 
-    // Android initialization settings
+    // Android initialization settings - don't request permissions immediately
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
 
-    // iOS initialization settings
+    // iOS initialization settings - don't request permissions immediately
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
-    // macOS initialization settings
+    // macOS initialization settings - don't request permissions immediately
     const DarwinInitializationSettings initializationSettingsMacOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const InitializationSettings initializationSettings =
@@ -55,52 +56,46 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Request permissions for Android
+    // Don't request permissions immediately - let PermissionService handle this gracefully
+  }
+
+  /// Request platform-specific permissions when needed
+  /// This should only be called after PermissionService has granted permission
+  Future<void> requestPlatformPermissions() async {
+    // Request permissions for Android (exact alarms, etc.)
     if (defaultTargetPlatform == TargetPlatform.android) {
-      await _requestAndroidPermissions();
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        // Request exact alarm permission (Android 12+)
+        await androidImplementation.requestExactAlarmsPermission();
+      }
     }
 
-    // Request permissions for iOS
+    // Request permissions for iOS/macOS
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
-      await _requestIOSPermissions();
+      await _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
+      await _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
     }
-  }
-
-  /// Request Android permissions
-  Future<void> _requestAndroidPermissions() async {
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidImplementation != null) {
-      // Request notification permission (Android 13+)
-      await androidImplementation.requestNotificationsPermission();
-
-      // Request exact alarm permission (Android 12+)
-      await androidImplementation.requestExactAlarmsPermission();
-    }
-  }
-
-  /// Request iOS/macOS permissions
-  Future<void> _requestIOSPermissions() async {
-    await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-
-    await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            MacOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
   }
 
   /// Handle notification tap
@@ -109,9 +104,18 @@ class NotificationService {
     // For now, we just acknowledge the tap
   }
 
-  /// Show Line of the Day notification
-  Future<void> showLineOfDayNotification(
+  /// Check if notifications can be shown (permission granted)
+  Future<bool> canShowNotifications() async {
+    return await PermissionService().isNotificationPermissionGranted();
+  }
+
+  /// Show Line of the Day notification (only if permission is granted)
+  Future<bool> showLineOfDayNotification(
       String pickupLine, String category) async {
+    // Check if we have permission to show notifications
+    if (!await canShowNotifications()) {
+      return false;
+    }
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'line_of_day_channel',
@@ -144,18 +148,24 @@ class NotificationService {
         ? '${pickupLine.substring(0, 97)}...'
         : pickupLine;
 
-    await _flutterLocalNotificationsPlugin.show(
-      _lineOfDayNotificationId,
-      title,
-      '$body\n\nCategory: $category',
-      platformChannelSpecifics,
-      payload: 'line_of_day',
-    );
+    try {
+      await _flutterLocalNotificationsPlugin.show(
+        _lineOfDayNotificationId,
+        title,
+        '$body\n\nCategory: $category',
+        platformChannelSpecifics,
+        payload: 'line_of_day',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Failed to show notification: $e');
+      return false;
+    }
   }
 
   /// Show a test notification (for the manual button)
-  Future<void> showTestNotification(String pickupLine, String category) async {
-    await showLineOfDayNotification(pickupLine, category);
+  Future<bool> showTestNotification(String pickupLine, String category) async {
+    return await showLineOfDayNotification(pickupLine, category);
   }
 
   /// Cancel all notifications

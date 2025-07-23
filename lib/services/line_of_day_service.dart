@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 import 'pickup_lines_service.dart';
+import 'permission_service.dart';
+import 'daily_notification_service.dart';
 
 class LineOfDayService {
   static const String _currentLineKey = 'current_line_of_day';
@@ -47,8 +49,16 @@ class LineOfDayService {
     await _scheduleNotifications();
   }
 
-  /// Schedule daily notifications for the future
+  /// Schedule daily notifications for the future (only if permission is granted AND toggle is enabled)
   Future<void> _scheduleNotifications() async {
+    // Check if daily notifications should be sent (permission granted AND toggle enabled)
+    final shouldSend =
+        await DailyNotificationService().shouldSendDailyNotifications();
+    if (!shouldSend) {
+      // Don't schedule notifications if conditions are not met
+      return;
+    }
+
     // Cancel any existing scheduled notifications
     await _notificationService.cancelAllScheduledNotifications();
 
@@ -196,6 +206,16 @@ class LineOfDayService {
     }
 
     return nextUpdate.difference(now);
+  }
+
+  /// Reschedule notifications when permission is granted
+  Future<void> rescheduleNotificationsAfterPermissionGranted() async {
+    await _scheduleNotifications();
+  }
+
+  /// Cancel all scheduled notifications
+  Future<void> cancelAllScheduledNotifications() async {
+    await _notificationService.cancelAllScheduledNotifications();
   }
 
   /// Dispose resources

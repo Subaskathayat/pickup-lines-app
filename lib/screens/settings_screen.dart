@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../utils/snackbar_utils.dart';
+import '../services/permission_service.dart';
+import '../services/daily_notification_service.dart';
+import '../widgets/permission_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,10 +14,30 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool notificationsEnabled = true;
   bool dailyLineNotification = true;
-  bool soundEnabled = true;
-  bool vibrationEnabled = true;
   String selectedTheme = 'Light';
   String selectedLanguage = 'English';
+  String notificationPermissionStatus = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPermissionStatus();
+  }
+
+  Future<void> _loadPermissionStatus() async {
+    final status =
+        await PermissionService().getNotificationPermissionStatusText();
+    final isGranted =
+        await PermissionService().isNotificationPermissionGranted();
+    final dailyEnabled =
+        await DailyNotificationService().getEffectiveToggleState();
+
+    setState(() {
+      notificationPermissionStatus = status;
+      notificationsEnabled = isGranted;
+      dailyLineNotification = dailyEnabled;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,50 +55,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSectionHeader('Notifications'),
-          _buildSwitchTile(
-            title: 'Enable Notifications',
-            subtitle: 'Receive app notifications',
-            value: notificationsEnabled,
-            onChanged: (value) {
-              setState(() {
-                notificationsEnabled = value;
-              });
-            },
-          ),
+          if (!notificationsEnabled) _buildPermissionStatusTile(),
+          if (!notificationsEnabled) const SizedBox(height: 8),
           _buildSwitchTile(
             title: 'Daily Line Notification',
             subtitle: 'Get notified about pickup line of the day',
             value: dailyLineNotification,
             onChanged: notificationsEnabled
-                ? (value) {
+                ? (value) async {
+                    // Capture context before async operation
+                    final currentContext = context;
+
                     setState(() {
                       dailyLineNotification = value;
                     });
+
+                    // Update the daily notification service
+                    await DailyNotificationService()
+                        .setDailyNotificationEnabled(value);
+
+                    // Show feedback to user
+                    if (mounted) {
+                      if (value) {
+                        SnackBarUtils.showSuccess(
+                            currentContext, 'Daily notifications enabled! 💕');
+                      } else {
+                        SnackBarUtils.showInfo(
+                            currentContext, 'Daily notifications disabled');
+                      }
+                    }
                   }
                 : null,
           ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Sound & Vibration'),
-          _buildSwitchTile(
-            title: 'Sound Effects',
-            subtitle: 'Play sounds for interactions',
-            value: soundEnabled,
-            onChanged: (value) {
-              setState(() {
-                soundEnabled = value;
-              });
-            },
-          ),
-          _buildSwitchTile(
-            title: 'Vibration',
-            subtitle: 'Vibrate on interactions',
-            value: vibrationEnabled,
-            onChanged: (value) {
-              setState(() {
-                vibrationEnabled = value;
-              });
-            },
-          ),
+          if (!notificationsEnabled) _buildPermissionActionTile(),
           const SizedBox(height: 24),
           _buildSectionHeader('Appearance'),
           _buildDropdownTile(
@@ -287,5 +299,165 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       'You have the latest version!',
     );
+  }
+
+  Widget _buildPermissionStatusTile() {
+    Color statusColor;
+    IconData statusIcon;
+    String userFriendlyMessage;
+
+    switch (notificationPermissionStatus.toLowerCase()) {
+      case 'granted':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        userFriendlyMessage = 'Notifications are enabled! 🎉';
+        break;
+      case 'denied':
+        statusColor = const Color(0xFFFFABAB); // Use app's coral pink
+        statusIcon = Icons.notifications_off;
+        userFriendlyMessage = 'Please grant notification permission';
+        break;
+      case 'permanently denied':
+        statusColor = Colors.orange;
+        statusIcon = Icons.settings;
+        userFriendlyMessage = 'Please enable notifications in device settings';
+        break;
+      default:
+        statusColor = Colors.orange;
+        statusIcon = Icons.warning;
+        userFriendlyMessage = 'Please grant notification permission';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            statusIcon,
+            color: statusColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+                Text(
+                  userFriendlyMessage,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: statusColor.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (notificationPermissionStatus.toLowerCase() != 'granted')
+            IconButton(
+              onPressed: _refreshPermissionStatus,
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh Status',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPermissionActionTile() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      child: Card(
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFABAB).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.notifications_active,
+              color: Color(0xFFFFABAB),
+              size: 20,
+            ),
+          ),
+          title: const Text(
+            'Enable Notifications',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          subtitle: const Text(
+            'Allow notifications to receive daily pickup lines',
+            style: TextStyle(fontSize: 12),
+          ),
+          trailing: ElevatedButton(
+            onPressed: _requestNotificationPermission,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFABAB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text(
+              'Allow',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _refreshPermissionStatus() async {
+    await _loadPermissionStatus();
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final shouldRequest =
+        await PermissionService().shouldRequestNotificationPermission();
+    final isPermanentlyDenied =
+        await PermissionService().isNotificationPermissionPermanentlyDenied();
+
+    if (isPermanentlyDenied) {
+      // Show dialog to go to settings
+      if (mounted) {
+        await PermissionDeniedDialog.show(context);
+      }
+    } else if (shouldRequest ||
+        !await PermissionService().isNotificationPermissionGranted()) {
+      // Show permission request dialog
+      if (mounted) {
+        await NotificationPermissionDialog.show(
+          context,
+          onPermissionGranted: () {
+            _loadPermissionStatus();
+            SnackBarUtils.showSuccess(context, 'Notifications enabled! 🎉');
+          },
+          onPermissionDenied: () {
+            _loadPermissionStatus();
+            SnackBarUtils.showWarning(context, 'Notifications remain disabled');
+          },
+        );
+      }
+    } else {
+      // Already granted, just refresh status
+      await _loadPermissionStatus();
+    }
   }
 }
