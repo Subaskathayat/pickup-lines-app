@@ -5,8 +5,13 @@ import 'services/line_of_day_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize the Line of Day service
-  await LineOfDayService.instance.initialize();
+  try {
+    // Initialize the Line of Day service
+    await LineOfDayService.instance.initialize();
+  } catch (e) {
+    // Continue even if Line of Day service fails
+    debugPrint('Line of Day service initialization failed: $e');
+  }
 
   runApp(const FlirtyTextApp());
 }

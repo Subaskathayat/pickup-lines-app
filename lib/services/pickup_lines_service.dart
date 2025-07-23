@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/services.dart';
 import '../models/category.dart';
 
@@ -36,10 +37,9 @@ class PickupLinesService {
       return _categories!;
     } catch (e) {
       // If loading fails, return empty list and log error
-      // In production, you might want to use a proper logging solution
-      // ignore: avoid_print
-      print('Error loading pickup lines: $e');
-      return [];
+      foundation.debugPrint('Error loading pickup lines: $e');
+      _categories = [];
+      return _categories!;
     }
   }
 
