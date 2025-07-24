@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
+import '../models/app_theme.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
@@ -254,6 +255,27 @@ class _TextCardState extends State<TextCard> {
   bool isFavorite = false;
   final FavoritesService _favoritesService = FavoritesService.instance;
 
+  /// Get appropriate text color based on current theme
+  Color _getTextColor(Color defaultColor) {
+    final themeService = ThemeService();
+
+    // Special handling for Luxury Diamond theme
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use a darker color that contrasts well with the platinum background
+      return const Color(0xFF4A4A4A); // Charcoal gray for better visibility
+    }
+
+    // Special handling for Passionate Fire and Midnight Seduction themes
+    if (themeService.currentTheme == AppThemeType.passionateFire ||
+        themeService.currentTheme == AppThemeType.midnightSeduction) {
+      // Use black for better contrast against these themes' gradient backgrounds
+      return Colors.black;
+    }
+
+    // For all other themes, use the default color
+    return defaultColor;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -332,7 +354,8 @@ class _TextCardState extends State<TextCard> {
                   child: Text(
                     '${widget.index + 1}',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
+                      color:
+                          _getTextColor(Theme.of(context).colorScheme.primary),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

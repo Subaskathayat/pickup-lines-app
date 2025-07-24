@@ -115,12 +115,14 @@ Future<void> scheduleNotification({
 
 **Configuration:**
 ```dart
-// Daily notification at 8:00 AM
-static const int _notificationHour = 8;
-static const int _notificationMinute = 0;
+// Three daily notification times
+static const int morningHour = 8;     // 8:00 AM
+static const int afternoonHour = 13;  // 1:00 PM
+static const int eveningHour = 19;    // 7:00 PM
 
 // Number of daily notifications to schedule in advance (30 days)
 static const int _daysToSchedule = 30;
+static const int notificationsPerDay = 3;
 ```
 
 **Scheduling Logic:**
@@ -129,33 +131,44 @@ Future<void> _scheduleNotifications() async {
   // Cancel existing notifications
   await _notificationService.cancelAllScheduledNotifications();
 
-  // Calculate next 8:00 AM
+  // Shuffle lines for content variety
+  final random = Random();
+  final List<int> shuffledIndices = List.generate(allLines.length, (i) => i);
+  shuffledIndices.shuffle(random);
+
+  // Calculate starting date
   DateTime now = DateTime.now();
-  DateTime nextNotificationTime = DateTime(
-    now.year, now.month, now.day,
-    _notificationHour, _notificationMinute,
-  );
+  DateTime startDate = DateTime(now.year, now.month, now.day);
 
-  // If past 8:00 AM today, schedule for tomorrow
-  if (nextNotificationTime.isBefore(now)) {
-    nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
+  // If past evening notification, start from tomorrow
+  DateTime eveningToday = DateTime(now.year, now.month, now.day, eveningHour, eveningMinute);
+  if (now.isAfter(eveningToday)) {
+    startDate = startDate.add(const Duration(days: 1));
   }
-  
-  // Schedule 30 days of notifications (only if conditions are met)
-  for (int i = 0; i < _daysToSchedule; i++) {
-    // Select random pickup line
-    final selectedLine = allLines[random.nextInt(allLines.length)];
 
-    await _notificationService.scheduleNotification(
-      id: 1000 + i,
-      title: 'Daily Line of the Day! 💕',
-      body: '$selectedLine\n\nCategory: $category',
-      scheduledDate: nextNotificationTime,
-      payload: 'line_of_day',
-    );
+  int lineIndex = 0;
 
-    // Next day at same time
-    nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
+  // Schedule 3 notifications per day for 30 days
+  for (int day = 0; day < _daysToSchedule; day++) {
+    DateTime currentDate = startDate.add(Duration(days: day));
+
+    // Morning notification (8:00 AM)
+    await _scheduleNotificationForTime(currentDate, morningHour, morningMinute,
+        allLines, categoryNames, shuffledIndices, lineIndex, day, 0,
+        'Good Morning! Start Your Day Right 🌅');
+    lineIndex = (lineIndex + 1) % allLines.length;
+
+    // Afternoon notification (1:00 PM)
+    await _scheduleNotificationForTime(currentDate, afternoonHour, afternoonMinute,
+        allLines, categoryNames, shuffledIndices, lineIndex, day, 1,
+        'Afternoon Pick-Me-Up! 🌞');
+    lineIndex = (lineIndex + 1) % allLines.length;
+
+    // Evening notification (7:00 PM)
+    await _scheduleNotificationForTime(currentDate, eveningHour, eveningMinute,
+        allLines, categoryNames, shuffledIndices, lineIndex, day, 2,
+        'Evening Charm Time! 🌙');
+    lineIndex = (lineIndex + 1) % allLines.length;
   }
 }
 ```

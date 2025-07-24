@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../models/app_theme.dart';
+import '../services/theme_service.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -22,6 +24,20 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _progressAnimation;
 
   String _version = '';
+
+  /// Get appropriate text color based on current theme
+  Color _getTextColor(Color defaultColor) {
+    final themeService = ThemeService();
+
+    // Special handling for Luxury Diamond theme
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use a darker color that contrasts well with the platinum background
+      return const Color(0xFF4A4A4A); // Charcoal gray for better visibility
+    }
+
+    // For all other themes, use the default color
+    return defaultColor;
+  }
 
   @override
   void initState() {
@@ -217,12 +233,12 @@ class _SplashScreenState extends State<SplashScreen>
               // App Title
               FadeTransition(
                 opacity: _fadeAnimation,
-                child: const Text(
+                child: Text(
                   'Pickup Lines',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: _getTextColor(Colors.white),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -237,7 +253,7 @@ class _SplashScreenState extends State<SplashScreen>
                   'Find your perfect line ',
                   style: TextStyle(
                     fontSize: 20,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: _getTextColor(Colors.white).withValues(alpha: 0.9),
                     fontWeight: FontWeight.w300,
                   ),
                 ),
@@ -255,9 +271,10 @@ class _SplashScreenState extends State<SplashScreen>
                       builder: (context, child) {
                         return LinearProgressIndicator(
                           value: _progressAnimation.value,
-                          backgroundColor: Colors.white.withValues(alpha: 0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                          backgroundColor: _getTextColor(Colors.white)
+                              .withValues(alpha: 0.3),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _getTextColor(Colors.white),
                           ),
                           minHeight: 3,
                         );
@@ -270,7 +287,8 @@ class _SplashScreenState extends State<SplashScreen>
                         'Loading your romantic arsenal...',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: _getTextColor(Colors.white)
+                              .withValues(alpha: 0.8),
                           fontWeight: FontWeight.w300,
                         ),
                       ),
@@ -288,7 +306,7 @@ class _SplashScreenState extends State<SplashScreen>
                   _version,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: _getTextColor(Colors.white).withValues(alpha: 0.7),
                     fontWeight: FontWeight.w300,
                   ),
                 ),

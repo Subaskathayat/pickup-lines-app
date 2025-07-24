@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/custom_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
 
 class CustomCollectionScreen extends StatefulWidget {
@@ -220,10 +221,11 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFFFFD1DC).withValues(alpha: 0.3),
-                const Color(0xFFFFABAB).withValues(alpha: 0.1),
-              ],
+              colors: ThemeService()
+                  .currentThemeData
+                  .gradientColors
+                  .map((color) => color.withValues(alpha: 0.2))
+                  .toList(),
             ),
           ),
           child: Column(
@@ -573,7 +575,9 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   }
 
   void _shareText(String text) {
-    Share.share(text);
+    SharePlus.instance.share(
+      ShareParams(text: text),
+    );
   }
 }
 

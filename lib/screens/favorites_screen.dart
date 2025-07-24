@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 import '../services/pickup_lines_service.dart';
+import '../services/theme_service.dart';
 import '../widgets/age_verification_dialog.dart';
 import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
@@ -128,10 +129,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              ],
+              colors: ThemeService()
+                  .currentThemeData
+                  .gradientColors
+                  .map((color) => color.withValues(alpha: 0.2))
+                  .toList(),
             ),
           ),
           child: Row(

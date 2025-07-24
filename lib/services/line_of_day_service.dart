@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 import 'pickup_lines_service.dart';
-import 'permission_service.dart';
 import 'daily_notification_service.dart';
 
 class LineOfDayService {
@@ -16,12 +15,19 @@ class LineOfDayService {
   Timer? _timer;
   final NotificationService _notificationService = NotificationService.instance;
 
-  // Daily notification at 8:00 AM
-  static const int _notificationHour = 8;
-  static const int _notificationMinute = 0;
+  // Daily notification times (public for testing)
+  static const int morningHour = 8;
+  static const int morningMinute = 0;
+  static const int afternoonHour = 13; // 1:00 PM
+  static const int afternoonMinute = 0;
+  static const int eveningHour = 19; // 7:00 PM
+  static const int eveningMinute = 0;
 
   // Number of daily notifications to schedule in advance (30 days)
   static const int _daysToSchedule = 30;
+
+  // Number of notifications per day (public for testing)
+  static const int notificationsPerDay = 3;
 
   LineOfDayService._();
 
@@ -76,47 +82,111 @@ class LineOfDayService {
 
     if (allLines.isEmpty) return;
 
+    // Shuffle the lines to ensure variety across the scheduling period
     final random = Random();
+    final List<int> shuffledIndices = List.generate(allLines.length, (i) => i);
+    shuffledIndices.shuffle(random);
 
-    // Calculate next notification time (next 8:00 AM)
+    // Calculate the starting date for scheduling
     DateTime now = DateTime.now();
-    DateTime nextNotificationTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _notificationHour,
-      _notificationMinute,
+    DateTime startDate = DateTime(now.year, now.month, now.day);
+
+    // If we're past the evening notification time, start from tomorrow
+    DateTime eveningToday =
+        DateTime(now.year, now.month, now.day, eveningHour, eveningMinute);
+    if (now.isAfter(eveningToday)) {
+      startDate = startDate.add(const Duration(days: 1));
+    }
+
+    int lineIndex = 0;
+
+    // Schedule notifications for the next 30 days
+    for (int day = 0; day < _daysToSchedule; day++) {
+      DateTime currentDate = startDate.add(Duration(days: day));
+
+      // Schedule morning notification (8:00 AM)
+      await _scheduleNotificationForTime(
+          currentDate,
+          morningHour,
+          morningMinute,
+          allLines,
+          categoryNames,
+          shuffledIndices,
+          lineIndex,
+          day,
+          0,
+          'Good Morning! Start Your Day Right 🌅');
+      lineIndex = (lineIndex + 1) % allLines.length;
+
+      // Schedule afternoon notification (1:00 PM)
+      await _scheduleNotificationForTime(
+          currentDate,
+          afternoonHour,
+          afternoonMinute,
+          allLines,
+          categoryNames,
+          shuffledIndices,
+          lineIndex,
+          day,
+          1,
+          'Afternoon Pick-Me-Up! 🌞');
+      lineIndex = (lineIndex + 1) % allLines.length;
+
+      // Schedule evening notification (7:00 PM)
+      await _scheduleNotificationForTime(
+          currentDate,
+          eveningHour,
+          eveningMinute,
+          allLines,
+          categoryNames,
+          shuffledIndices,
+          lineIndex,
+          day,
+          2,
+          'Evening Charm Time! 🌙');
+      lineIndex = (lineIndex + 1) % allLines.length;
+    }
+  }
+
+  /// Helper method to schedule a notification for a specific time
+  Future<void> _scheduleNotificationForTime(
+      DateTime date,
+      int hour,
+      int minute,
+      List<String> allLines,
+      List<String> categoryNames,
+      List<int> shuffledIndices,
+      int lineIndex,
+      int day,
+      int timeSlot,
+      String title) async {
+    DateTime scheduledTime =
+        DateTime(date.year, date.month, date.day, hour, minute);
+
+    // Skip if the scheduled time is in the past
+    if (scheduledTime.isBefore(DateTime.now())) {
+      return;
+    }
+
+    final shuffledIndex = shuffledIndices[lineIndex];
+    final selectedLine = allLines[shuffledIndex];
+    final selectedCategory = categoryNames[shuffledIndex];
+
+    // Truncate long pickup lines for notification body
+    String body = selectedLine.length > 100
+        ? '${selectedLine.substring(0, 97)}...'
+        : selectedLine;
+
+    // Generate unique ID: base + (day * 3) + timeSlot
+    int notificationId = 1000 + (day * notificationsPerDay) + timeSlot;
+
+    await _notificationService.scheduleNotification(
+      id: notificationId,
+      title: title,
+      body: '$body\n\nCategory: $selectedCategory',
+      scheduledDate: scheduledTime,
+      payload: 'line_of_day',
     );
-
-    // If it's already past 8:00 AM today, schedule for tomorrow
-    if (nextNotificationTime.isBefore(now)) {
-      nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
-    }
-
-    // Schedule daily notifications for the next 30 days
-    for (int i = 0; i < _daysToSchedule; i++) {
-      // Select a random line
-      final index = random.nextInt(allLines.length);
-      final selectedLine = allLines[index];
-      final selectedCategory = categoryNames[index];
-
-      // Truncate long pickup lines for notification title
-      String title = 'Daily Line of the Day! 💕';
-      String body = selectedLine.length > 100
-          ? '${selectedLine.substring(0, 97)}...'
-          : selectedLine;
-
-      await _notificationService.scheduleNotification(
-        id: 1000 + i, // Use unique IDs starting from 1000
-        title: title,
-        body: '$body\n\nCategory: $selectedCategory',
-        scheduledDate: nextNotificationTime,
-        payload: 'line_of_day',
-      );
-
-      // Schedule next notification for next day at same time
-      nextNotificationTime = nextNotificationTime.add(const Duration(days: 1));
-    }
   }
 
   /// Stop scheduled notifications
@@ -189,23 +259,31 @@ class LineOfDayService {
     await _scheduleNotifications();
   }
 
-  /// Get time until next daily update (next 8:00 AM)
+  /// Get time until next notification (morning, afternoon, or evening)
   Future<Duration?> getTimeUntilNextUpdate() async {
     DateTime now = DateTime.now();
-    DateTime nextUpdate = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      _notificationHour,
-      _notificationMinute,
-    );
+    DateTime today = DateTime(now.year, now.month, now.day);
 
-    // If it's already past 8:00 AM today, get tomorrow's 8:00 AM
-    if (nextUpdate.isBefore(now)) {
-      nextUpdate = nextUpdate.add(const Duration(days: 1));
+    // Check for next notification today
+    List<DateTime> todayNotifications = [
+      DateTime(today.year, today.month, today.day, morningHour, morningMinute),
+      DateTime(
+          today.year, today.month, today.day, afternoonHour, afternoonMinute),
+      DateTime(today.year, today.month, today.day, eveningHour, eveningMinute),
+    ];
+
+    // Find the next notification time today
+    for (DateTime notificationTime in todayNotifications) {
+      if (notificationTime.isAfter(now)) {
+        return notificationTime.difference(now);
+      }
     }
 
-    return nextUpdate.difference(now);
+    // If no more notifications today, get tomorrow's morning notification
+    DateTime tomorrowMorning = DateTime(
+        today.year, today.month, today.day + 1, morningHour, morningMinute);
+
+    return tomorrowMorning.difference(now);
   }
 
   /// Reschedule notifications when permission is granted

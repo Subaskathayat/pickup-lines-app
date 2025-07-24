@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/category.dart';
+import '../models/app_theme.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
@@ -187,18 +188,22 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
                                 Icon(
                                   Icons.format_quote,
                                   size: 40,
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: _getIconColor(
+                                      Theme.of(context).colorScheme.primary),
                                 ),
                                 const SizedBox(height: 24),
                                 Expanded(
                                   child: Center(
                                     child: Text(
                                       widget.category.texts[index],
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         height: 1.5,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.black87,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -287,23 +292,39 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
     );
   }
 
+  /// Get appropriate icon color based on current theme
+  Color _getIconColor(Color defaultColor) {
+    final themeService = ThemeService();
+
+    // Special handling for Luxury Diamond theme
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use a darker color that contrasts well with the platinum background
+      return const Color(0xFF4A4A4A); // Charcoal gray for better visibility
+    }
+
+    // For all other themes, use the default theme color
+    return defaultColor;
+  }
+
   Widget _buildActionButton({
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onPressed,
   }) {
+    final iconColor = _getIconColor(color);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: iconColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: IconButton(
             onPressed: onPressed,
-            icon: Icon(icon, color: color),
+            icon: Icon(icon, color: iconColor),
             iconSize: 24,
           ),
         ),
@@ -312,7 +333,7 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: color,
+            color: iconColor,
             fontWeight: FontWeight.w500,
           ),
         ),

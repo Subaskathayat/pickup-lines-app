@@ -60,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (!notificationsEnabled) const SizedBox(height: 8),
           _buildSwitchTile(
             title: 'Daily Line Notification',
-            subtitle: 'Get notified about pickup line of the day',
+            subtitle: 'Get pickup lines 3 times daily (8 AM, 1 PM, 7 PM)',
             value: dailyLineNotification,
             onChanged: notificationsEnabled
                 ? (value) async {
