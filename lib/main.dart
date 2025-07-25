@@ -4,6 +4,9 @@ import 'services/line_of_day_service.dart';
 import 'services/theme_service.dart';
 import 'services/premium_service.dart';
 
+// Global navigation key for accessing navigation context from anywhere
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -54,6 +57,7 @@ class _FlirtyTextAppState extends State<FlirtyTextApp> {
       title: 'Pickup Lines',
       theme: _themeService.currentThemeData.themeData,
       home: const SplashScreen(),
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
     );
   }

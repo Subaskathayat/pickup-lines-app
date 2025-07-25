@@ -31,6 +31,14 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
       // Initialize the service
       await _lineOfDayService.initialize();
 
+      // Check if we need to update from the most recent notification first
+      if (await _lineOfDayService.shouldUpdateFromRecentNotification()) {
+        await _lineOfDayService.updateFromRecentNotification();
+      } else if (await _lineOfDayService
+          .shouldUpdateFromMorningNotification()) {
+        await _lineOfDayService.updateFromMorningNotification();
+      }
+
       // Get current line and category
       String? currentLine = await _lineOfDayService.getCurrentLine();
       String? currentCategory = await _lineOfDayService.getCurrentCategory();
@@ -243,48 +251,38 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.2),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
-                          Icons.info_outline,
-                          color: Colors.grey[600],
+                          Icons.schedule,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'A new pickup line is featured daily at 8:00 AM. Tap the button below to generate a new line manually!',
+                            'A new pickup line is featured daily at 8:00 AM',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Button for generating new line manually
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _generateNewLineAndNotification,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Generate New Line'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -368,42 +366,5 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
     SharePlus.instance.share(
       ShareParams(text: todaysLine),
     );
-  }
-
-  /// Generate a new line manually and show notification (for testing)
-  Future<void> _generateNewLineAndNotification() async {
-    try {
-      // Show loading state
-      setState(() {
-        isLoading = true;
-      });
-
-      // Generate new line
-      await _lineOfDayService.generateNewLineManually();
-
-      // Reload the current line
-      await _loadLineOfDay();
-
-      // Show success message
-      if (mounted) {
-        SnackBarUtils.showSuccess(
-          context,
-          'New line generated! 🎉',
-          duration: const Duration(seconds: 3),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-
-        SnackBarUtils.showError(
-          context,
-          'Error generating new line: $e',
-          duration: const Duration(seconds: 3),
-        );
-      }
-    }
   }
 }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'permission_service.dart';
+import '../main.dart';
+import '../screens/pickup_line_of_day_screen.dart';
 
 class NotificationService {
   static NotificationService? _instance;
@@ -100,8 +102,20 @@ class NotificationService {
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse notificationResponse) {
-    // Handle notification tap - could navigate to Line of Day screen
-    // For now, we just acknowledge the tap
+    // Handle notification tap based on payload
+    final payload = notificationResponse.payload;
+
+    if (payload == 'line_of_day') {
+      // Navigate to Line of the Day screen
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const PickupLineOfDayScreen(),
+          ),
+        );
+      }
+    }
   }
 
   /// Check if notifications can be shown (permission granted)
