@@ -340,9 +340,10 @@ class ThemeService extends ChangeNotifier {
       animationDuration: const Duration(milliseconds: 400),
       animationCurve: Curves.easeInOut,
       gradientColors: const [
-        Color(0xFFD4AF37), // Gold
-        Color(0xFFC0C0C0), // Silver
-        Color(0xFFCD7F32), // Bronze
+        Color(
+            0xFF8B7355), // Deep Bronze (darker, more mysterious starting tone)
+        Color(0xFF5D4E37), // Dark Olive/Umber (sophisticated intermediate)
+        Color(0xFF1A1A1A), // Rich Black (deeper noir atmosphere)
       ],
       fontFamily: 'Cormorant Garamond',
       themeData: ThemeData(
@@ -350,7 +351,7 @@ class ThemeService extends ChangeNotifier {
           primary: Color(0xFFD4AF37), // Gold
           secondary: Color(0xFFC0C0C0), // Silver
           tertiary: Color(0xFFCD7F32), // Bronze
-          surface: Color(0xFF1C1C1C), // Charcoal
+          surface: Color(0xFF1A1A1A), // Rich Black (matches gradient end color)
           onPrimary: Color(0xFF000000), // Black
           onSecondary: Color(0xFF000000), // Black
           onSurface: Color(0xFFFFFFFF), // Pure White

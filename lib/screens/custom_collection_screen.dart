@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/custom_lines_service.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
+import '../models/app_theme.dart';
 import '../utils/snackbar_utils.dart';
 
 class CustomCollectionScreen extends StatefulWidget {
@@ -177,8 +178,8 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Add Your First Line'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFABAB),
-              foregroundColor: Colors.white,
+              backgroundColor: _getButtonBackgroundColor(context),
+              foregroundColor: _getButtonTextColor(context),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
@@ -762,6 +763,72 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
         );
       },
     );
+  }
+
+  /// Get appropriate button background color based on current theme for better visibility
+  Color _getButtonBackgroundColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    switch (themeService.currentTheme) {
+      case AppThemeType.luxuryDiamond:
+        // Use secondary color (charcoal) for better visibility against platinum background
+        return Theme.of(context).colorScheme.secondary;
+
+      case AppThemeType.elegantNoir:
+        // Use surface color (charcoal) for elegant contrast against black background
+        return Theme.of(context).colorScheme.surface;
+
+      case AppThemeType.cherryBlossom:
+        // Use secondary color (pale green) for better contrast than light pink
+        return Theme.of(context).colorScheme.secondary;
+
+      default:
+        // For other themes, use primary color but ensure it's not too light
+        final primaryColor = Theme.of(context).colorScheme.primary;
+        final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+        if (brightness == Brightness.light) {
+          // If primary is too light, use onSurface for better contrast
+          return Theme.of(context).colorScheme.onSurface;
+        }
+
+        return primaryColor;
+    }
+  }
+
+  /// Get appropriate button text color based on current theme and background
+  Color _getButtonTextColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    switch (themeService.currentTheme) {
+      case AppThemeType.luxuryDiamond:
+        // Use onSecondary for text on secondary background
+        return Theme.of(context).colorScheme.onSecondary;
+
+      case AppThemeType.elegantNoir:
+        // Use gold (primary) for text on charcoal background for elegant contrast
+        return Theme.of(context).colorScheme.primary;
+
+      case AppThemeType.cherryBlossom:
+        // Use onSecondary (forest green) for text on pale green background
+        return Theme.of(context).colorScheme.onSecondary;
+
+      default:
+        // For other themes, determine text color based on background brightness
+        final backgroundColor = _getButtonBackgroundColor(context);
+        final backgroundBrightness =
+            ThemeData.estimateBrightnessForColor(backgroundColor);
+
+        if (backgroundBrightness == Brightness.light) {
+          // Dark text on light background
+          return Theme.of(context).colorScheme.onSurface;
+        } else {
+          // Light text on dark background
+          return Theme.of(context).colorScheme.onPrimary;
+        }
+    }
   }
 }
 

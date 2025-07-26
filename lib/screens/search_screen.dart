@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/favorites_service.dart';
+import '../services/premium_service.dart';
+import '../services/premium_content_service.dart';
 import '../utils/snackbar_utils.dart';
 import '../services/custom_lines_service.dart';
 import '../models/category.dart';
@@ -23,12 +25,14 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isSearching = false;
   Set<String> _favoriteTexts = {};
   List<Category> _categories = [];
+  bool _isPremiumUser = false;
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
     _loadCategories();
+    _loadPremiumStatus();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -66,6 +70,20 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _loadPremiumStatus() async {
+    try {
+      final premiumService = PremiumService();
+      final isPremium = await premiumService.isPremiumUser();
+      if (mounted) {
+        setState(() {
+          _isPremiumUser = isPremium;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
   void _onSearchChanged() async {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
@@ -94,6 +112,27 @@ class _SearchScreenState extends State<SearchScreen> {
             index: i,
             isCustomCollection: false,
           ));
+        }
+      }
+    }
+
+    // Search through premium content if user is premium
+    if (_isPremiumUser) {
+      final premiumCategory =
+          await PremiumContentService.instance.getTop100FavsCategory();
+      if (premiumCategory != null) {
+        for (int i = 0; i < premiumCategory.texts.length; i++) {
+          final text = premiumCategory.texts[i];
+          if (text.toLowerCase().contains(query)) {
+            results.add(SearchResult(
+              text: text,
+              category: premiumCategory.name,
+              categoryIcon: premiumCategory.icon,
+              index: i,
+              isCustomCollection: false,
+              isPremiumContent: true,
+            ));
+          }
         }
       }
     }
@@ -366,6 +405,46 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ],
+                if (result.isPremiumContent) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          size: 12,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          'PREMIUM',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -448,6 +527,7 @@ class SearchResult {
   final String categoryIcon;
   final int index;
   final bool isCustomCollection;
+  final bool isPremiumContent;
 
   SearchResult({
     required this.text,
@@ -455,5 +535,6 @@ class SearchResult {
     required this.categoryIcon,
     required this.index,
     this.isCustomCollection = false,
+    this.isPremiumContent = false,
   });
 }

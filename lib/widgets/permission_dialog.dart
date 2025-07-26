@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import '../services/permission_service.dart';
+import '../services/theme_service.dart';
+import '../models/app_theme.dart';
 
 /// Dialog to request notification permission with proper context
 class NotificationPermissionDialog extends StatelessWidget {
@@ -115,10 +117,12 @@ class NotificationPermissionDialog extends StatelessWidget {
             Navigator.of(context).pop();
             onPermissionDenied?.call();
           },
+          style: TextButton.styleFrom(
+            foregroundColor: _getTextButtonColor(context),
+          ),
           child: const Text(
             'Not Now',
             style: TextStyle(
-              color: Colors.grey,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -136,8 +140,8 @@ class NotificationPermissionDialog extends StatelessWidget {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFABAB),
-            foregroundColor: Colors.white,
+            backgroundColor: _getButtonBackgroundColor(context),
+            foregroundColor: _getButtonTextColor(context),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -198,6 +202,74 @@ class NotificationPermissionDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Get appropriate button background color based on current theme for better visibility
+  Color _getButtonBackgroundColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
+  }
+
+  /// Get appropriate button text color based on current theme and background
+  Color _getButtonTextColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use onSecondary for text on secondary background
+      return Theme.of(context).colorScheme.onSecondary;
+    }
+
+    // For other themes, determine text color based on background brightness
+    final backgroundColor = _getButtonBackgroundColor(context);
+    final backgroundBrightness =
+        ThemeData.estimateBrightnessForColor(backgroundColor);
+
+    if (backgroundBrightness == Brightness.light) {
+      // Dark text on light background
+      return Theme.of(context).colorScheme.onSurface;
+    } else {
+      // Light text on dark background
+      return Theme.of(context).colorScheme.onPrimary;
+    }
+  }
+
+  /// Get appropriate text button color for better visibility
+  Color _getTextButtonColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for luxury diamond theme
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary but ensure visibility
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
   }
 
   /// Show the permission dialog
@@ -283,10 +355,12 @@ class PermissionDeniedDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: _getTextButtonColor(context),
+          ),
           child: const Text(
             'Maybe Later',
             style: TextStyle(
-              color: Colors.grey,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -297,8 +371,8 @@ class PermissionDeniedDialog extends StatelessWidget {
             await PermissionService().openAppSettings();
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
+            backgroundColor: _getButtonBackgroundColor(context),
+            foregroundColor: _getButtonTextColor(context),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -312,6 +386,74 @@ class PermissionDeniedDialog extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Get appropriate button background color based on current theme for better visibility
+  Color _getButtonBackgroundColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
+  }
+
+  /// Get appropriate button text color based on current theme and background
+  Color _getButtonTextColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use onSecondary for text on secondary background
+      return Theme.of(context).colorScheme.onSecondary;
+    }
+
+    // For other themes, determine text color based on background brightness
+    final backgroundColor = _getButtonBackgroundColor(context);
+    final backgroundBrightness =
+        ThemeData.estimateBrightnessForColor(backgroundColor);
+
+    if (backgroundBrightness == Brightness.light) {
+      // Dark text on light background
+      return Theme.of(context).colorScheme.onSurface;
+    } else {
+      // Light text on dark background
+      return Theme.of(context).colorScheme.onPrimary;
+    }
+  }
+
+  /// Get appropriate text button color for better visibility
+  Color _getTextButtonColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for luxury diamond theme
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary but ensure visibility
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
   }
 
   /// Show the permission denied dialog

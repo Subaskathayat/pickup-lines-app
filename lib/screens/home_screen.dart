@@ -3,6 +3,8 @@ import '../services/pickup_lines_service.dart';
 import '../services/custom_lines_service.dart';
 import '../services/permission_flow_service.dart';
 import '../services/theme_service.dart';
+import '../services/premium_service.dart';
+import '../services/premium_content_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/age_verification_dialog.dart';
@@ -25,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Category> categories = [];
   bool isLoading = true;
   int customLinesCount = 0;
+  bool isPremiumUser = false;
+  Category? premiumCategory;
   final CustomLinesService _customLinesService = CustomLinesService.instance;
 
   @override
@@ -32,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadCategories();
     _loadCustomLinesCount();
+    _loadPremiumStatus();
+    _loadPremiumCategory();
     _checkFirstLaunchPermission();
   }
 
@@ -81,6 +87,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadPremiumStatus() async {
+    try {
+      final premiumService = PremiumService();
+      final isPremium = await premiumService.isPremiumUser();
+      if (mounted) {
+        setState(() {
+          isPremiumUser = isPremium;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _loadPremiumCategory() async {
+    try {
+      final category =
+          await PremiumContentService.instance.getTop100FavsCategory();
+      if (mounted) {
+        setState(() {
+          premiumCategory = category;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,16 +128,24 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const SubscriptionScreen(),
                 ),
               );
+              // Reload premium status when returning from subscription screen
+              _loadPremiumStatus();
+              _loadPremiumCategory();
             },
-            icon: const Icon(Icons.workspace_premium),
-            tooltip: 'Premium',
+            icon: Icon(
+              isPremiumUser ? Icons.diamond : Icons.workspace_premium,
+              color: isPremiumUser
+                  ? const Color(0xFFDAA520) // Golden color for premium users
+                  : null, // Default color for non-premium users
+            ),
+            tooltip: isPremiumUser ? 'Premium Active' : 'Get Premium',
           ),
           IconButton(
             onPressed: () {
@@ -218,23 +260,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               );
                             } else if (index == 1) {
-                              // Top 100 Lines Card
-                              final top100Category = categories.firstWhere(
-                                (cat) => cat.id == 'top100',
-                                orElse: () => Category(
-                                  id: 'top100',
-                                  name: 'Top 100 Lines',
-                                  icon: '🏆',
-                                  texts: [],
-                                ),
-                              );
+                              // Top Secret Card (Premium)
                               return FeatureCard(
-                                title: 'Top 100 Lines',
-                                subtitle: 'Most favorited by all users',
-                                icon: '🏆',
-                                count: top100Category.texts.length,
-                                onTap: () =>
-                                    _navigateToCategory(top100Category),
+                                title: 'Top Secret',
+                                subtitle: 'Exclusive premium content',
+                                icon: '💎',
+                                count: premiumCategory?.texts.length ?? 0,
+                                isPremium: true,
+                                onTap: () {
+                                  if (premiumCategory != null) {
+                                    _navigateToTop100Lines(premiumCategory!);
+                                  }
+                                },
                               );
                             } else {
                               // Regular category cards
@@ -403,6 +440,94 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+
+  /// Navigate to Top Secret Lines with subscription check
+  Future<void> _navigateToTop100Lines(Category category) async {
+    // Check subscription status first
+    final premiumService = PremiumService();
+    final isPremium = await premiumService.isPremiumUser();
+
+    if (!isPremium) {
+      // Show subscription prompt if not premium
+      _showPremiumPrompt();
+      return;
+    }
+
+    // If premium, proceed with normal navigation
+    await _navigateToCategory(category);
+  }
+
+  /// Show premium prompt for Top Secret Lines access
+  void _showPremiumPrompt() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.star,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text('Premium Feature'),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Top Secret is a premium feature!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Get access to:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text('• Exclusive premium pickup lines'),
+              Text('• Carefully curated content'),
+              Text('• Updated regularly'),
+              Text('• Ad-free experience'),
+              Text('• All premium themes'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Maybe Later'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to subscription screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SubscriptionScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              child: const Text('Get Premium'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class CategoryCard extends StatelessWidget {
@@ -444,7 +569,7 @@ class CategoryCard extends StatelessWidget {
               colors: ThemeService()
                   .currentThemeData
                   .gradientColors
-                  .map((color) => color.withValues(alpha: 0.3))
+                  .map((color) => color.withValues(alpha: 0.4))
                   .toList(),
             ),
           ),
@@ -491,6 +616,7 @@ class FeatureCard extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
   final List<Color>? gradientColors;
+  final bool isPremium;
 
   const FeatureCard({
     super.key,
@@ -500,6 +626,7 @@ class FeatureCard extends StatelessWidget {
     required this.count,
     required this.onTap,
     this.gradientColors,
+    this.isPremium = false,
   });
 
   @override
@@ -523,57 +650,98 @@ class FeatureCard extends StatelessWidget {
                   ThemeService()
                       .currentThemeData
                       .gradientColors
-                      .map((color) => color.withValues(alpha: 0.3))
+                      .map((color) => color.withValues(alpha: 0.4))
                       .toList(),
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
             children: [
-              Text(
-                icon,
-                style: const TextStyle(fontSize: 32),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    icon,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (isPremium) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.star,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isPremium ? 'Premium Content' : subtitle,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isPremium
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                      height: 1.2,
+                      fontWeight:
+                          isPremium ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    count > 0 ? '$count lines' : 'Get started',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+              // Premium lock icon in top-right corner
+              if (isPremium)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.lock,
+                      size: 10,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                count > 0 ? '$count lines' : 'Get started',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-              ),
             ],
           ),
         ),

@@ -336,7 +336,7 @@ class _TextCardState extends State<TextCard> {
               colors: ThemeService()
                   .currentThemeData
                   .gradientColors
-                  .map((color) => color.withValues(alpha: 0.3))
+                  .map((color) => color.withValues(alpha: 0.4))
                   .toList(),
             ),
           ),

@@ -194,7 +194,7 @@ class _ThemeSelectionWidgetState extends State<ThemeSelectionWidget> {
             width: isSelected ? 2 : 1,
           ),
           gradient: LinearGradient(
-            colors: themeData.gradientColors.take(2).toList(),
+            colors: themeData.gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

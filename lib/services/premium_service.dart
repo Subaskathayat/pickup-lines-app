@@ -21,10 +21,10 @@ class PremiumService {
   Future<bool> isPremiumUser() async {
     await initialize();
 
-    // For development/testing purposes, temporarily enable premium for all users
+    // Default to false for new users until they unlock premium
     // TODO: Replace with actual subscription validation logic when implementing real subscriptions
     final isPremium = _prefs!.getBool(_premiumStatusKey) ??
-        true; // Changed to true for testing
+        false; // Default to false for new users
 
     if (isPremium) {
       // Check if subscription is still valid
