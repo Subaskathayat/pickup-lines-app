@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/favorites_service.dart';
 import '../services/pickup_lines_service.dart';
 import '../services/theme_service.dart';
+import '../models/app_theme.dart';
 import '../widgets/age_verification_dialog.dart';
 import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
@@ -20,6 +21,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final PickupLinesService _pickupLinesService = PickupLinesService.instance;
   List<String> favorites = [];
   bool isLoading = true;
+
+  // Multi-select functionality
+  bool isSelectionMode = false;
+  Set<int> selectedIndices = {};
+  bool isSelectAll = false;
 
   @override
   void initState() {
@@ -49,13 +55,34 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Favorites',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isSelectionMode ? '${selectedIndices.length} selected' : 'Favorites',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              )
+            : null,
+        actions: isSelectionMode
+            ? [
+                IconButton(
+                  icon: Icon(isSelectAll ? Icons.deselect : Icons.select_all),
+                  onPressed: _toggleSelectAll,
+                  tooltip: isSelectAll ? 'Deselect All' : 'Select All',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed:
+                      selectedIndices.isNotEmpty ? _deleteSelected : null,
+                  tooltip: 'Delete Selected',
+                ),
+              ]
+            : null,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -112,15 +139,33 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _buildFavoriteCard(String text, int index) {
+    final isSelected = selectedIndices.contains(index);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: isSelected
+            ? BorderSide(
+                color: _getIconColor(context),
+                width: 2,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
-        onTap: () =>
-            _navigateToTextDetail(text), // Navigate to text detail screen
+        onTap: () {
+          if (isSelectionMode) {
+            _toggleSelection(index);
+          } else {
+            _navigateToTextDetail(text);
+          }
+        },
+        onLongPress: () {
+          if (!isSelectionMode) {
+            _enterSelectionMode(index);
+          }
+        },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -138,6 +183,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
           child: Row(
             children: [
+              // Selection indicator
+              if (isSelectionMode)
+                Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    isSelected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: isSelected
+                        ? _getIconColor(context)
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.4),
+                    size: 24,
+                  ),
+                ),
               Expanded(
                 child: Text(
                   text,
@@ -149,40 +211,42 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                children: [
-                  IconButton(
-                    onPressed: () => _removeFavorite(index),
-                    icon: Icon(
-                      Icons.favorite,
-                      color: Theme.of(context).colorScheme.primary,
+              // Action buttons (hidden in selection mode)
+              if (!isSelectionMode)
+                Column(
+                  children: [
+                    IconButton(
+                      onPressed: () => _removeFavorite(index),
+                      icon: Icon(
+                        Icons.favorite,
+                        color: _getIconColor(context),
+                      ),
+                      tooltip: 'Remove from favorites',
                     ),
-                    tooltip: 'Remove from favorites',
-                  ),
-                  IconButton(
-                    onPressed: () => _copyText(text),
-                    icon: Icon(
-                      Icons.copy,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.6),
+                    IconButton(
+                      onPressed: () => _copyText(text),
+                      icon: Icon(
+                        Icons.copy,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                      tooltip: 'Copy text',
                     ),
-                    tooltip: 'Copy text',
-                  ),
-                  IconButton(
-                    onPressed: () => _shareText(text),
-                    icon: Icon(
-                      Icons.share,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.6),
+                    IconButton(
+                      onPressed: () => _shareText(text),
+                      icon: Icon(
+                        Icons.share,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                      tooltip: 'Share text',
                     ),
-                    tooltip: 'Share text',
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -265,5 +329,154 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         );
       }
     }
+  }
+
+  /// Get appropriate icon color based on current theme for better contrast
+  Color _getIconColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
+  }
+
+  /// Enter selection mode and select the first item
+  void _enterSelectionMode(int index) {
+    setState(() {
+      isSelectionMode = true;
+      selectedIndices.clear();
+      selectedIndices.add(index);
+      isSelectAll = false;
+    });
+  }
+
+  /// Exit selection mode
+  void _exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedIndices.clear();
+      isSelectAll = false;
+    });
+  }
+
+  /// Toggle selection of an item
+  void _toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+      } else {
+        selectedIndices.add(index);
+      }
+
+      // Update select all state
+      isSelectAll = selectedIndices.length == favorites.length;
+    });
+  }
+
+  /// Toggle select all/deselect all
+  void _toggleSelectAll() {
+    setState(() {
+      if (isSelectAll) {
+        selectedIndices.clear();
+        isSelectAll = false;
+      } else {
+        selectedIndices.clear();
+        selectedIndices
+            .addAll(List.generate(favorites.length, (index) => index));
+        isSelectAll = true;
+      }
+    });
+  }
+
+  /// Delete selected items
+  void _deleteSelected() {
+    if (selectedIndices.isEmpty) return;
+
+    final selectedCount = selectedIndices.length;
+    final selectedTexts =
+        selectedIndices.map((index) => favorites[index]).toList();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Selected'),
+          content: Text(
+            'Are you sure you want to remove $selectedCount favorite${selectedCount > 1 ? 's' : ''}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final currentContext = context;
+                Navigator.of(currentContext).pop();
+
+                try {
+                  // Remove selected items from favorites
+                  bool allSuccess = true;
+                  for (final text in selectedTexts) {
+                    final success =
+                        await _favoritesService.removeFromFavorites(text);
+                    if (!success) allSuccess = false;
+                  }
+
+                  if (allSuccess && mounted) {
+                    // Reload favorites and exit selection mode
+                    await _loadFavorites();
+                    _exitSelectionMode();
+
+                    SnackBarUtils.showSnackBar(
+                      currentContext,
+                      'Removed $selectedCount favorite${selectedCount > 1 ? 's' : ''}',
+                      action: SnackBarAction(
+                        label: 'Undo',
+                        textColor:
+                            Theme.of(currentContext).colorScheme.onPrimary,
+                        onPressed: () async {
+                          // Re-add all removed items
+                          for (final text in selectedTexts) {
+                            await _favoritesService.addToFavorites(text);
+                          }
+                          _loadFavorites();
+                        },
+                      ),
+                    );
+                  } else if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Failed to remove some favorites',
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Error removing favorites: $e',
+                    );
+                  }
+                }
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

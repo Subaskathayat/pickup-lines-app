@@ -15,6 +15,7 @@ class PickupLineOfDayScreen extends StatefulWidget {
 class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
   String todaysLine = "Loading your daily pickup line...";
   String category = "Loading...";
+  String timeSlotInfo = "";
   bool isFavorite = false;
   bool isLoading = true;
   final FavoritesService _favoritesService = FavoritesService.instance;
@@ -28,46 +29,85 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
 
   Future<void> _loadLineOfDay() async {
     try {
-      // Initialize the service
+      // Initialize the service (this handles daily line generation and synchronization)
       await _lineOfDayService.initialize();
 
-      // Check if we need to update from the most recent notification first
-      if (await _lineOfDayService.shouldUpdateFromRecentNotification()) {
-        await _lineOfDayService.updateFromRecentNotification();
-      } else if (await _lineOfDayService
-          .shouldUpdateFromMorningNotification()) {
-        await _lineOfDayService.updateFromMorningNotification();
-      }
+      // Get the most relevant content based on current time and recent notifications
+      final content = await _lineOfDayService.getMostRelevantContent();
 
-      // Get current line and category
-      String? currentLine = await _lineOfDayService.getCurrentLine();
-      String? currentCategory = await _lineOfDayService.getCurrentCategory();
+      final currentLine = content['line'];
+      final currentCategory = content['category'];
 
       if (currentLine != null && currentCategory != null) {
         // Check favorite status
         bool favorite = await _favoritesService.isFavorite(currentLine);
 
+        // Determine current time slot for display
+        String timeSlot = _getCurrentTimeSlotDisplay();
+
         if (mounted) {
           setState(() {
             todaysLine = currentLine;
             category = currentCategory;
+            timeSlotInfo = timeSlot;
             isFavorite = favorite;
             isLoading = false;
           });
         }
       } else {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
+        // Fallback: try to get current line directly
+        String? fallbackLine = await _lineOfDayService.getCurrentLine();
+        String? fallbackCategory = await _lineOfDayService.getCurrentCategory();
+
+        if (fallbackLine != null && fallbackCategory != null) {
+          bool favorite = await _favoritesService.isFavorite(fallbackLine);
+          String timeSlot = _getCurrentTimeSlotDisplay();
+
+          if (mounted) {
+            setState(() {
+              todaysLine = fallbackLine;
+              category = fallbackCategory;
+              timeSlotInfo = timeSlot;
+              isFavorite = favorite;
+              isLoading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              todaysLine = "No pickup line available. Please check back later.";
+              category = "System";
+              timeSlotInfo = "";
+              isFavorite = false;
+              isLoading = false;
+            });
+          }
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          todaysLine = "Error loading pickup line. Please try again.";
+          category = "Error";
+          timeSlotInfo = "";
+          isFavorite = false;
           isLoading = false;
         });
       }
+    }
+  }
+
+  /// Get display text for current time slot
+  String _getCurrentTimeSlotDisplay() {
+    final now = DateTime.now();
+    final currentHour = now.hour;
+
+    if (currentHour >= 19) {
+      return "Evening Edition (7:00 PM)";
+    } else if (currentHour >= 13) {
+      return "Afternoon Edition (1:00 PM)";
+    } else {
+      return "Morning Edition (8:00 AM)";
     }
   }
 
@@ -273,13 +313,43 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            'A new pickup line is featured daily at 8:00 AM',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'New pickup lines featured 3 times daily:',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '8:00 AM • 1:00 PM • 7:00 PM',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.7),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              if (timeSlotInfo.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Currently showing: $timeSlotInfo',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],

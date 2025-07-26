@@ -60,17 +60,17 @@ class LineOfDayService {
     await _initPrefs();
     await _notificationService.initialize();
 
+    // Ensure daily lines are generated for today and upcoming days
+    await ensureDailyLinesGenerated();
+
     // Check if we need to update from the most recent notification first
     if (await shouldUpdateFromRecentNotification()) {
       await updateFromRecentNotification();
     } else if (await shouldUpdateFromMorningNotification()) {
       await updateFromMorningNotification();
     } else {
-      // Generate initial line if none exists
-      String? currentLine = await getCurrentLine();
-      if (currentLine == null) {
-        await _generateNewLine();
-      }
+      // Update current line based on pre-generated daily lines
+      await updateCurrentLineFromDailyLines();
     }
 
     // Schedule notifications for the future
@@ -81,6 +81,55 @@ class LineOfDayService {
 
     // Set up daily timer for automatic Line of the Day updates
     _setupDailyUpdateTimer();
+  }
+
+  /// Ensure daily lines are generated for today and upcoming days
+  Future<void> ensureDailyLinesGenerated() async {
+    final today = DateTime.now();
+
+    // Generate lines for today if not already done
+    await generateDailyLines(today);
+
+    // Generate lines for the next few days to ensure notifications work
+    for (int i = 1; i <= 7; i++) {
+      final futureDate = today.add(Duration(days: i));
+      await generateDailyLines(futureDate);
+    }
+  }
+
+  /// Update current line based on pre-generated daily lines
+  Future<void> updateCurrentLineFromDailyLines() async {
+    final today = DateTime.now();
+    final currentTimeSlot = _getCurrentTimeSlot();
+
+    // Try to get the appropriate line for current time slot
+    final content = await calculateNotificationForDate(today, currentTimeSlot);
+
+    if (content != null) {
+      await _prefs!.setString(_currentLineKey, content['line']!);
+      await _prefs!.setString(_categoryKey, content['category']!);
+      await _prefs!
+          .setInt(_lastUpdateKey, DateTime.now().millisecondsSinceEpoch);
+
+      // Store as notification content for tracking
+      await storeNotificationContent(
+          content['line']!, content['category']!, currentTimeSlot);
+    } else {
+      // Fallback: generate new daily lines and try again
+      await generateDailyLines(today);
+      final fallbackContent =
+          await calculateNotificationForDate(today, currentTimeSlot);
+
+      if (fallbackContent != null) {
+        await _prefs!.setString(_currentLineKey, fallbackContent['line']!);
+        await _prefs!.setString(_categoryKey, fallbackContent['category']!);
+        await _prefs!
+            .setInt(_lastUpdateKey, DateTime.now().millisecondsSinceEpoch);
+
+        await storeNotificationContent(fallbackContent['line']!,
+            fallbackContent['category']!, currentTimeSlot);
+      }
+    }
   }
 
   /// Schedule daily notifications for the future (only if permission is granted AND toggle is enabled)
@@ -96,25 +145,6 @@ class LineOfDayService {
     // Cancel any existing scheduled notifications
     await _notificationService.cancelAllScheduledNotifications();
 
-    // Get all pickup lines from all categories
-    final allLinesWithCategories =
-        await PickupLinesService.instance.getAllPickupLinesWithCategories();
-
-    List<String> allLines = [];
-    List<String> categoryNames = [];
-
-    for (var lineData in allLinesWithCategories) {
-      allLines.add(lineData['line']!);
-      categoryNames.add(lineData['category']!);
-    }
-
-    if (allLines.isEmpty) return;
-
-    // Shuffle the lines to ensure variety across the scheduling period
-    final random = Random();
-    final List<int> shuffledIndices = List.generate(allLines.length, (i) => i);
-    shuffledIndices.shuffle(random);
-
     // Calculate the starting date for scheduling
     DateTime now = DateTime.now();
     DateTime startDate = DateTime(now.year, now.month, now.day);
@@ -126,68 +156,30 @@ class LineOfDayService {
       startDate = startDate.add(const Duration(days: 1));
     }
 
-    int lineIndex = 0;
-
     // Schedule notifications for the next 30 days
     for (int day = 0; day < _daysToSchedule; day++) {
       DateTime currentDate = startDate.add(Duration(days: day));
 
+      // Ensure daily lines are generated for this date
+      await generateDailyLines(currentDate);
+
       // Schedule morning notification (8:00 AM)
-      await _scheduleNotificationForTime(
-          currentDate,
-          morningHour,
-          morningMinute,
-          allLines,
-          categoryNames,
-          shuffledIndices,
-          lineIndex,
-          day,
-          0,
-          'Good Morning! Start Your Day Right 🌅');
-      lineIndex = (lineIndex + 1) % allLines.length;
+      await _scheduleNotificationForTimeSlot(currentDate, morningHour,
+          morningMinute, day, 0, 'Good Morning! Start Your Day Right 🌅');
 
       // Schedule afternoon notification (1:00 PM)
-      await _scheduleNotificationForTime(
-          currentDate,
-          afternoonHour,
-          afternoonMinute,
-          allLines,
-          categoryNames,
-          shuffledIndices,
-          lineIndex,
-          day,
-          1,
-          'Afternoon Pick-Me-Up! 🌞');
-      lineIndex = (lineIndex + 1) % allLines.length;
+      await _scheduleNotificationForTimeSlot(currentDate, afternoonHour,
+          afternoonMinute, day, 1, 'Afternoon Pick-Me-Up! 🌞');
 
       // Schedule evening notification (7:00 PM)
-      await _scheduleNotificationForTime(
-          currentDate,
-          eveningHour,
-          eveningMinute,
-          allLines,
-          categoryNames,
-          shuffledIndices,
-          lineIndex,
-          day,
-          2,
-          'Evening Charm Time! 🌙');
-      lineIndex = (lineIndex + 1) % allLines.length;
+      await _scheduleNotificationForTimeSlot(currentDate, eveningHour,
+          eveningMinute, day, 2, 'Evening Charm Time! 🌙');
     }
   }
 
-  /// Helper method to schedule a notification for a specific time
-  Future<void> _scheduleNotificationForTime(
-      DateTime date,
-      int hour,
-      int minute,
-      List<String> allLines,
-      List<String> categoryNames,
-      List<int> shuffledIndices,
-      int lineIndex,
-      int day,
-      int timeSlot,
-      String title) async {
+  /// Helper method to schedule a notification for a specific time slot using pre-generated lines
+  Future<void> _scheduleNotificationForTimeSlot(DateTime date, int hour,
+      int minute, int day, int timeSlot, String title) async {
     DateTime scheduledTime =
         DateTime(date.year, date.month, date.day, hour, minute);
 
@@ -196,30 +188,19 @@ class LineOfDayService {
       return;
     }
 
-    final shuffledIndex = shuffledIndices[lineIndex];
-    final selectedLine = allLines[shuffledIndex];
-    final selectedCategory = categoryNames[shuffledIndex];
+    // Get the pre-generated line for this date and time slot
+    final content = await calculateNotificationForDate(date, timeSlot);
 
-    // Store notification content for Line of the Day sync for all time slots
-    final dateString = '${date.year}-${date.month}-${date.day}';
-
-    // Store content for the specific time slot
-    if (hour == morningHour && minute == morningMinute) {
-      // Morning notification (8 AM)
-      await _prefs!.setString('morning_line_$dateString', selectedLine);
-      await _prefs!.setString('morning_category_$dateString', selectedCategory);
-    } else if (hour == afternoonHour && minute == afternoonMinute) {
-      // Afternoon notification (1 PM)
-      await _prefs!.setString('afternoon_line_$dateString', selectedLine);
-      await _prefs!
-          .setString('afternoon_category_$dateString', selectedCategory);
-    } else if (hour == eveningHour && minute == eveningMinute) {
-      // Evening notification (7 PM)
-      await _prefs!.setString('evening_line_$dateString', selectedLine);
-      await _prefs!.setString('evening_category_$dateString', selectedCategory);
+    if (content == null) {
+      // This shouldn't happen since we generate lines before scheduling,
+      // but handle it gracefully
+      return;
     }
 
-    // If this is today's notification, update the current Line of the Day
+    final selectedLine = content['line']!;
+    final selectedCategory = content['category']!;
+
+    // If this is today's notification, update the current Line of the Day tracking
     final today = DateTime.now();
     final isToday = date.year == today.year &&
         date.month == today.month &&
@@ -251,7 +232,112 @@ class LineOfDayService {
     await _notificationService.cancelAllScheduledNotifications();
   }
 
-  /// Generate a new random pickup line
+  /// Generate exactly 3 different pickup lines for a specific date
+  Future<void> generateDailyLines(DateTime date) async {
+    await _initPrefs();
+    final dateString = '${date.year}-${date.month}-${date.day}';
+
+    // Check if lines for this date already exist
+    final morningLine = _prefs!.getString('morning_line_$dateString');
+    if (morningLine != null) {
+      // Lines already generated for this date
+      return;
+    }
+
+    // Get all pickup lines from all categories
+    final allLinesWithCategories =
+        await PickupLinesService.instance.getAllPickupLinesWithCategories();
+
+    List<String> allLines = [];
+    List<String> categoryNames = [];
+
+    for (var lineData in allLinesWithCategories) {
+      allLines.add(lineData['line']!);
+      categoryNames.add(lineData['category']!);
+    }
+
+    if (allLines.isEmpty) return;
+
+    // Create a seeded random generator for consistent daily generation
+    final seed = date.year * 10000 + date.month * 100 + date.day;
+    final random = Random(seed);
+
+    // Generate 3 different random indices
+    Set<int> usedIndices = {};
+    List<int> selectedIndices = [];
+
+    while (selectedIndices.length < 3 &&
+        selectedIndices.length < allLines.length) {
+      int index = random.nextInt(allLines.length);
+      if (!usedIndices.contains(index)) {
+        usedIndices.add(index);
+        selectedIndices.add(index);
+      }
+    }
+
+    // Store the 3 daily lines
+    for (int i = 0; i < selectedIndices.length; i++) {
+      final index = selectedIndices[i];
+      final line = allLines[index];
+      final category = categoryNames[index];
+
+      switch (i) {
+        case 0: // Morning (8 AM)
+          await _prefs!.setString('morning_line_$dateString', line);
+          await _prefs!.setString('morning_category_$dateString', category);
+          break;
+        case 1: // Afternoon (1 PM)
+          await _prefs!.setString('afternoon_line_$dateString', line);
+          await _prefs!.setString('afternoon_category_$dateString', category);
+          break;
+        case 2: // Evening (7 PM)
+          await _prefs!.setString('evening_line_$dateString', line);
+          await _prefs!.setString('evening_category_$dateString', category);
+          break;
+      }
+    }
+
+    // If this is today, also update the current line tracking
+    final today = DateTime.now();
+    final isToday = date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+
+    if (isToday) {
+      // Determine which line should be current based on time
+      int currentTimeSlot = _getCurrentTimeSlot();
+      if (currentTimeSlot < selectedIndices.length) {
+        final currentIndex = selectedIndices[currentTimeSlot];
+        final currentLine = allLines[currentIndex];
+        final currentCategory = categoryNames[currentIndex];
+
+        await _prefs!.setString(_currentLineKey, currentLine);
+        await _prefs!.setString(_categoryKey, currentCategory);
+        await _prefs!
+            .setInt(_lastUpdateKey, DateTime.now().millisecondsSinceEpoch);
+
+        // Store as notification content for the current time slot
+        await storeNotificationContent(
+            currentLine, currentCategory, currentTimeSlot);
+      }
+    }
+  }
+
+  /// Get current time slot based on time of day
+  int _getCurrentTimeSlot() {
+    final now = DateTime.now();
+    final currentHour = now.hour;
+
+    if (currentHour >= 19) {
+      return 2; // Evening (7 PM or later)
+    } else if (currentHour >= 13) {
+      return 1; // Afternoon (1 PM or later)
+    } else {
+      return 0; // Morning (before 1 PM)
+    }
+  }
+
+  /// Generate a new random pickup line (legacy method for manual generation)
   Future<void> _generateNewLine() async {
     await _initPrefs();
 
@@ -657,36 +743,60 @@ class LineOfDayService {
     }
   }
 
-  /// Set up a daily timer to automatically update Line of the Day at 8:00 AM
+  /// Set up timers to automatically update Line of the Day at notification times
   void _setupDailyUpdateTimer() {
     _timer?.cancel(); // Cancel any existing timer
 
     final now = DateTime.now();
-    final today8AM =
-        DateTime(now.year, now.month, now.day, morningHour, morningMinute);
+    final today = DateTime(now.year, now.month, now.day);
 
-    // Calculate when the next 8:00 AM will be
-    DateTime next8AM;
-    if (now.isBefore(today8AM)) {
-      // If it's before 8:00 AM today, schedule for today
-      next8AM = today8AM;
+    // Define all notification times for today
+    final todayMorning = DateTime(
+        today.year, today.month, today.day, morningHour, morningMinute);
+    final todayAfternoon = DateTime(
+        today.year, today.month, today.day, afternoonHour, afternoonMinute);
+    final todayEvening = DateTime(
+        today.year, today.month, today.day, eveningHour, eveningMinute);
+
+    // Find the next notification time
+    DateTime? nextNotificationTime;
+
+    if (now.isBefore(todayMorning)) {
+      nextNotificationTime = todayMorning;
+    } else if (now.isBefore(todayAfternoon)) {
+      nextNotificationTime = todayAfternoon;
+    } else if (now.isBefore(todayEvening)) {
+      nextNotificationTime = todayEvening;
     } else {
-      // If it's after 8:00 AM today, schedule for tomorrow
-      next8AM = today8AM.add(const Duration(days: 1));
+      // All notifications for today have passed, set for tomorrow's morning
+      nextNotificationTime = todayMorning.add(const Duration(days: 1));
     }
 
-    final timeUntilNext8AM = next8AM.difference(now);
+    final timeUntilNext = nextNotificationTime.difference(now);
 
-    // Set up a timer to trigger at the next 8:00 AM
-    _timer = Timer(timeUntilNext8AM, () async {
-      // Update Line of the Day from morning notification if available
-      if (await shouldUpdateFromMorningNotification()) {
-        await updateFromMorningNotification();
-      }
-
-      // Set up the timer for the next day
+    // Set up a timer to trigger at the next notification time
+    _timer = Timer(timeUntilNext, () async {
+      await _handleDailyUpdate();
+      // Set up the timer for the next notification
       _setupDailyUpdateTimer();
     });
+  }
+
+  /// Handle daily update when notification time is reached
+  Future<void> _handleDailyUpdate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Ensure daily lines are generated for today
+    await generateDailyLines(today);
+
+    // Update current line based on the current time slot
+    await updateCurrentLineFromDailyLines();
+
+    // If this is the morning notification, also generate lines for upcoming days
+    if (now.hour == morningHour && now.minute == morningMinute) {
+      await ensureDailyLinesGenerated();
+    }
   }
 
   /// Get time until next notification (morning, afternoon, or evening)

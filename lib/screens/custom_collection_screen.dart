@@ -21,6 +21,11 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   Set<String> _favoriteTexts = {};
   bool _isLoading = true;
 
+  // Multi-select functionality
+  bool isSelectionMode = false;
+  Set<int> selectedIndices = {};
+  bool isSelectAll = false;
+
   @override
   void initState() {
     super.initState();
@@ -61,40 +66,62 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'My Pickup Lines',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isSelectionMode
+              ? '${selectedIndices.length} selected'
+              : 'My Pickup Lines',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _showAddLineDialog,
-            icon: const Icon(Icons.add),
-            tooltip: 'Add Custom Line',
-          ),
-          if (_customLines.isNotEmpty)
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'clear_all') {
-                  _showClearAllDialog();
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'clear_all',
-                  child: Row(
-                    children: [
-                      Icon(Icons.clear_all, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Clear All'),
+        leading: isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              )
+            : null,
+        actions: isSelectionMode
+            ? [
+                IconButton(
+                  icon: Icon(isSelectAll ? Icons.deselect : Icons.select_all),
+                  onPressed: _toggleSelectAll,
+                  tooltip: isSelectAll ? 'Deselect All' : 'Select All',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed:
+                      selectedIndices.isNotEmpty ? _deleteSelected : null,
+                  tooltip: 'Delete Selected',
+                ),
+              ]
+            : [
+                IconButton(
+                  onPressed: _showAddLineDialog,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Add Custom Line',
+                ),
+                if (_customLines.isNotEmpty)
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'clear_all') {
+                        _showClearAllDialog();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'clear_all',
+                        child: Row(
+                          children: [
+                            Icon(Icons.clear_all, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Clear All'),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
               ],
-            ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -200,6 +227,7 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
 
   Widget _buildCustomLineCard(String line, int index) {
     final isFavorite = _favoriteTexts.contains(line);
+    final isSelected = selectedIndices.contains(index);
 
     return Card(
       key: ValueKey(
@@ -208,10 +236,23 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
+        side: isSelected
+            ? BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              )
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: () {
-          // Optional: Add tap functionality if needed
+          if (isSelectionMode) {
+            _toggleSelection(index);
+          }
+        },
+        onLongPress: () {
+          if (!isSelectionMode) {
+            _enterSelectionMode(index);
+          }
         },
         borderRadius: BorderRadius.circular(16),
         child: Container(
@@ -233,11 +274,29 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.format_quote,
-                    color: Color(0xFFFFABAB),
-                    size: 20,
-                  ),
+                  // Selection indicator
+                  if (isSelectionMode)
+                    Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      child: Icon(
+                        isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.4),
+                        size: 24,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.format_quote,
+                      color: Color(0xFFFFABAB),
+                      size: 20,
+                    ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -252,80 +311,84 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => _copyToClipboard(line),
-                        icon: Icon(
-                          Icons.copy,
-                          color: Colors.grey[600],
+              // Action buttons (hidden in selection mode)
+              if (!isSelectionMode) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => _copyToClipboard(line),
+                          icon: Icon(
+                            Icons.copy,
+                            color: Colors.grey[600],
+                          ),
+                          tooltip: 'Copy text',
                         ),
-                        tooltip: 'Copy text',
-                      ),
-                      IconButton(
-                        onPressed: () => _shareText(line),
-                        icon: Icon(
-                          Icons.share,
-                          color: Colors.grey[600],
+                        IconButton(
+                          onPressed: () => _shareText(line),
+                          icon: Icon(
+                            Icons.share,
+                            color: Colors.grey[600],
+                          ),
+                          tooltip: 'Share text',
                         ),
-                        tooltip: 'Share text',
-                      ),
-                      IconButton(
-                        onPressed: () => _toggleFavorite(line),
-                        icon: Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite
-                              ? const Color(0xFFFFABAB)
-                              : Colors.grey[600],
+                        IconButton(
+                          onPressed: () => _toggleFavorite(line),
+                          icon: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite
+                                ? const Color(0xFFFFABAB)
+                                : Colors.grey[600],
+                          ),
+                          tooltip: isFavorite
+                              ? 'Remove from favorites'
+                              : 'Add to favorites',
                         ),
-                        tooltip: isFavorite
-                            ? 'Remove from favorites'
-                            : 'Add to favorites',
-                      ),
-                    ],
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _showEditLineDialog(line, index);
-                      } else if (value == 'delete') {
-                        _showDeleteConfirmation(line, index);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 18),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
+                      ],
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showEditLineDialog(line, index);
+                        } else if (value == 'delete') {
+                          _showDeleteConfirmation(line, index);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 18),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
                         ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 18, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete',
+                                  style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                    child: Icon(Icons.more_vert,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6)),
-                  ),
-                ],
-              ),
+                      ],
+                      child: Icon(Icons.more_vert,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6)),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -577,6 +640,127 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
   void _shareText(String text) {
     SharePlus.instance.share(
       ShareParams(text: text),
+    );
+  }
+
+  /// Enter selection mode and select the first item
+  void _enterSelectionMode(int index) {
+    setState(() {
+      isSelectionMode = true;
+      selectedIndices.clear();
+      selectedIndices.add(index);
+      isSelectAll = false;
+    });
+  }
+
+  /// Exit selection mode
+  void _exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedIndices.clear();
+      isSelectAll = false;
+    });
+  }
+
+  /// Toggle selection of an item
+  void _toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+      } else {
+        selectedIndices.add(index);
+      }
+
+      // Update select all state
+      isSelectAll = selectedIndices.length == _customLines.length;
+    });
+  }
+
+  /// Toggle select all/deselect all
+  void _toggleSelectAll() {
+    setState(() {
+      if (isSelectAll) {
+        selectedIndices.clear();
+        isSelectAll = false;
+      } else {
+        selectedIndices.clear();
+        selectedIndices
+            .addAll(List.generate(_customLines.length, (index) => index));
+        isSelectAll = true;
+      }
+    });
+  }
+
+  /// Delete selected items
+  void _deleteSelected() {
+    if (selectedIndices.isEmpty) return;
+
+    final selectedCount = selectedIndices.length;
+    final selectedTexts =
+        selectedIndices.map((index) => _customLines[index]).toList();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Selected'),
+          content: Text(
+            'Are you sure you want to delete $selectedCount custom line${selectedCount > 1 ? 's' : ''}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final currentContext = context;
+                Navigator.of(currentContext).pop();
+
+                try {
+                  // Remove selected items from custom lines
+                  bool allSuccess = true;
+                  for (final text in selectedTexts) {
+                    final success =
+                        await _customLinesService.removeCustomLine(text);
+                    if (!success) allSuccess = false;
+
+                    // Also remove from favorites if it was favorited
+                    if (_favoriteTexts.contains(text)) {
+                      await _favoritesService.removeFromFavorites(text);
+                    }
+                  }
+
+                  if (allSuccess && mounted) {
+                    // Reload data and exit selection mode
+                    await _loadCustomLines();
+                    await _loadFavorites();
+                    _exitSelectionMode();
+
+                    SnackBarUtils.showSnackBar(
+                      currentContext,
+                      'Deleted $selectedCount custom line${selectedCount > 1 ? 's' : ''}',
+                    );
+                  } else if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Failed to delete some custom lines',
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Error deleting custom lines: $e',
+                    );
+                  }
+                }
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

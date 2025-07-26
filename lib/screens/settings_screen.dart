@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../utils/snackbar_utils.dart';
 import '../services/permission_service.dart';
 import '../services/daily_notification_service.dart';
+import '../services/theme_service.dart';
+import '../services/favorites_service.dart';
+import '../models/app_theme.dart';
 
 import '../widgets/permission_dialog.dart';
 import '../widgets/theme_selection_widget.dart';
@@ -108,12 +111,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           _buildSectionHeader('Data'),
           _buildActionTile(
-            title: 'Clear Cache',
-            subtitle: 'Free up storage space',
-            icon: Icons.cleaning_services,
-            onTap: _clearCache,
-          ),
-          _buildActionTile(
             title: 'Reset Favorites',
             subtitle: 'Remove all favorite pickup lines',
             icon: Icons.refresh,
@@ -125,12 +122,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Version',
             subtitle: '1.0.0',
             icon: Icons.info_outline,
-          ),
-          _buildActionTile(
-            title: 'Check for Updates',
-            subtitle: 'Look for app updates',
-            icon: Icons.system_update,
-            onTap: _checkForUpdates,
           ),
         ],
       ),
@@ -145,7 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
+          color: _getIconColor(context),
         ),
       ),
     );
@@ -160,13 +151,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: SwitchListTile(
-        title: Text(title),
-        subtitle: Text(subtitle),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
         value: value,
         onChanged: onChanged,
-        activeColor: Theme.of(context).colorScheme.primary,
+        activeColor: _getSwitchActiveColor(context),
+        activeTrackColor: _getSwitchActiveColor(context).withValues(alpha: 0.3),
+        inactiveThumbColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+        inactiveTrackColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
       ),
     );
+  }
+
+  /// Get appropriate switch active color based on current theme for better visibility
+  Color _getSwitchActiveColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, check if primary color provides good contrast
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+    final surfaceBrightness = ThemeData.estimateBrightnessForColor(
+        Theme.of(context).colorScheme.surface);
+
+    // If both primary and surface are light, use a darker color
+    if (brightness == Brightness.light &&
+        surfaceBrightness == Brightness.light) {
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    // If both are dark, use a lighter color
+    if (brightness == Brightness.dark && surfaceBrightness == Brightness.dark) {
+      return Theme.of(context).colorScheme.onPrimary;
+    }
+
+    return primaryColor;
+  }
+
+  /// Get appropriate icon color based on current theme for better contrast
+  Color _getIconColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
   }
 
   Widget _buildDropdownTile({
@@ -204,10 +263,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
+        leading: Icon(icon, color: _getIconColor(context)),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        ),
         onTap: onTap,
       ),
     );
@@ -221,38 +294,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title),
-        subtitle: Text(subtitle),
+        leading: Icon(icon, color: _getIconColor(context)),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
       ),
-    );
-  }
-
-  void _clearCache() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Clear Cache'),
-          content: const Text('Are you sure you want to clear the app cache?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                SnackBarUtils.showSuccess(
-                  context,
-                  'Cache cleared successfully',
-                );
-              },
-              child: const Text('Clear'),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -270,25 +326,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                SnackBarUtils.showSuccess(
-                  context,
-                  'Favorites reset successfully',
-                );
+              onPressed: () async {
+                // Capture context before async operation
+                final currentContext = context;
+                Navigator.of(currentContext).pop();
+
+                try {
+                  // Clear all favorites using the service
+                  final success =
+                      await FavoritesService.instance.clearAllFavorites();
+
+                  if (success && mounted) {
+                    SnackBarUtils.showSuccess(
+                      currentContext,
+                      'All favorites cleared successfully',
+                    );
+                  } else if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Failed to clear favorites',
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    SnackBarUtils.showError(
+                      currentContext,
+                      'Error clearing favorites: $e',
+                    );
+                  }
+                }
               },
               child: const Text('Reset'),
             ),
           ],
         );
       },
-    );
-  }
-
-  void _checkForUpdates() {
-    SnackBarUtils.showInfo(
-      context,
-      'You have the latest version!',
     );
   }
 

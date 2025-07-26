@@ -254,7 +254,7 @@ class _ThemeSelectionWidgetState extends State<ThemeSelectionWidget> {
                 child: Icon(
                   Icons.check_circle,
                   size: 16,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: _getIconColor(context),
                 ),
               ),
           ],
@@ -308,5 +308,27 @@ class _ThemeSelectionWidgetState extends State<ThemeSelectionWidget> {
         ],
       ),
     );
+  }
+
+  /// Get appropriate icon color based on current theme for better contrast
+  Color _getIconColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
   }
 }

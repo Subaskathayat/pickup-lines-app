@@ -8,6 +8,7 @@ import '../screens/privacy_policy_screen.dart';
 import '../screens/terms_conditions_screen.dart';
 import '../screens/subscription_screen.dart';
 import '../services/theme_service.dart';
+import '../models/app_theme.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -183,21 +184,22 @@ class AppDrawer extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          color: Theme.of(context).colorScheme.primary,
+          color: _getDrawerIconColor(context),
           size: 20,
         ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 16,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
-          color: Colors.grey[600],
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           fontSize: 12,
         ),
       ),
@@ -207,6 +209,28 @@ class AppDrawer extends StatelessWidget {
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
+  }
+
+  /// Get appropriate icon color based on current theme for better contrast
+  Color _getDrawerIconColor(BuildContext context) {
+    final themeService = ThemeService();
+
+    // Special handling for themes with poor contrast
+    if (themeService.currentTheme == AppThemeType.luxuryDiamond) {
+      // Use secondary color (charcoal) for better visibility against platinum background
+      return Theme.of(context).colorScheme.secondary;
+    }
+
+    // For other themes, use primary color but ensure it's not too light
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brightness = ThemeData.estimateBrightnessForColor(primaryColor);
+
+    if (brightness == Brightness.light) {
+      // If primary is too light, use onSurface for better contrast
+      return Theme.of(context).colorScheme.onSurface;
+    }
+
+    return primaryColor;
   }
 
   void _launchEmail() async {
