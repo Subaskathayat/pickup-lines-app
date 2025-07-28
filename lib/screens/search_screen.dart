@@ -6,6 +6,7 @@ import '../services/favorites_service.dart';
 import '../services/premium_service.dart';
 import '../services/premium_content_service.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/copy_utils.dart';
 import '../services/custom_lines_service.dart';
 import '../models/category.dart';
 
@@ -186,9 +187,12 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void _copyText(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    SnackBarUtils.showInfo(context, 'Copied to clipboard! 💕');
+  void _copyText(String text) async {
+    await CopyUtils.copyWithAd(
+      context,
+      text,
+      successMessage: 'Copied to clipboard! 💕',
+    );
   }
 
   void _shareText(String text) {

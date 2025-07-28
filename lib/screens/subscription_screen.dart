@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/premium_service.dart';
 import '../utils/snackbar_utils.dart';
+import 'premium_congratulations_screen.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -331,43 +332,72 @@ class SubscriptionScreen extends StatelessWidget {
     );
   }
 
-  void _handleSubscription(BuildContext context) {
-    // TODO: Implement actual subscription logic
-    SnackBarUtils.showCustom(
-      context,
-      'Subscription feature coming soon!',
-      const Color(0xFFFFABAB),
-    );
+  void _handleSubscription(BuildContext context) async {
+    // For now, simulate successful subscription for demonstration
+    try {
+      await PremiumService().grantPremiumAccess();
+
+      // Show congratulations screen after successful premium purchase
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PremiumCongratulationsScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackBarUtils.showError(
+          context,
+          'Failed to process subscription: $e',
+        );
+      }
+    }
+
+    // TODO: Replace with actual subscription logic when ready
   }
 
   // Temporary premium testing functionality
   void _handleYearlyTap(BuildContext context) async {
     try {
       await PremiumService().grantPremiumAccess();
-      SnackBarUtils.showSuccess(
-        context,
-        '🎉 Premium access granted! (Testing Mode)',
-      );
+
+      // Show congratulations screen after successful premium purchase
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PremiumCongratulationsScreen(),
+          ),
+        );
+      }
     } catch (e) {
-      SnackBarUtils.showError(
-        context,
-        'Failed to grant premium access: $e',
-      );
+      if (context.mounted) {
+        SnackBarUtils.showError(
+          context,
+          'Failed to grant premium access: $e',
+        );
+      }
     }
   }
 
   void _handleMonthlyTap(BuildContext context) async {
     try {
       await PremiumService().revokePremiumAccess();
-      SnackBarUtils.showInfo(
-        context,
-        '🔒 Premium access revoked! (Testing Mode)',
-      );
+      if (context.mounted) {
+        SnackBarUtils.showInfo(
+          context,
+          '🔒 Premium access revoked! (Testing Mode)',
+        );
+      }
     } catch (e) {
-      SnackBarUtils.showError(
-        context,
-        'Failed to revoke premium access: $e',
-      );
+      if (context.mounted) {
+        SnackBarUtils.showError(
+          context,
+          'Failed to revoke premium access: $e',
+        );
+      }
     }
   }
 }

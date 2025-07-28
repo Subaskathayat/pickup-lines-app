@@ -7,6 +7,7 @@ import '../services/theme_service.dart';
 import '../models/app_theme.dart';
 import '../widgets/age_verification_dialog.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/copy_utils.dart';
 import 'text_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -278,9 +279,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
-  void _copyText(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    SnackBarUtils.showInfo(context, 'Copied to clipboard! 💕');
+  void _copyText(String text) async {
+    await CopyUtils.copyWithAd(
+      context,
+      text,
+      successMessage: 'Copied to clipboard! 💕',
+    );
   }
 
   void _shareText(String text) {

@@ -6,6 +6,7 @@ import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
 import '../models/app_theme.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/copy_utils.dart';
 
 class CustomCollectionScreen extends StatefulWidget {
   const CustomCollectionScreen({super.key});
@@ -633,9 +634,12 @@ class _CustomCollectionScreenState extends State<CustomCollectionScreen> {
     await _loadFavorites();
   }
 
-  void _copyToClipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    SnackBarUtils.showInfo(context, 'Copied to clipboard! 📋');
+  void _copyToClipboard(String text) async {
+    await CopyUtils.copyWithAd(
+      context,
+      text,
+      successMessage: 'Copied to clipboard! 📋',
+    );
   }
 
   void _shareText(String text) {

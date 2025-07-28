@@ -622,6 +622,78 @@ class LineOfDayService {
     }
   }
 
+  /// Get all 3 daily lines for today (morning, afternoon, evening)
+  Future<List<Map<String, String?>>> getAllDailyLines() async {
+    await _initPrefs();
+    final today = DateTime.now();
+
+    // Ensure daily lines are generated for today
+    await generateDailyLines(today);
+
+    List<Map<String, String?>> dailyLines = [];
+
+    // Get morning line
+    final morningContent = await calculateNotificationForDate(today, 0);
+    dailyLines.add({
+      'line': morningContent?['line'],
+      'category': morningContent?['category'],
+      'timeSlot': 'Morning',
+      'time': '8:00 AM',
+      'icon': '🌅',
+      'description': 'Start Your Day Right',
+    });
+
+    // Get afternoon line
+    final afternoonContent = await calculateNotificationForDate(today, 1);
+    dailyLines.add({
+      'line': afternoonContent?['line'],
+      'category': afternoonContent?['category'],
+      'timeSlot': 'Afternoon',
+      'time': '1:00 PM',
+      'icon': '🌞',
+      'description': 'Pick-Me-Up',
+    });
+
+    // Get evening line
+    final eveningContent = await calculateNotificationForDate(today, 2);
+    dailyLines.add({
+      'line': eveningContent?['line'],
+      'category': eveningContent?['category'],
+      'timeSlot': 'Evening',
+      'time': '7:00 PM',
+      'icon': '🌙',
+      'description': 'Charm Time',
+    });
+
+    return dailyLines;
+  }
+
+  /// Get all 3 daily lines with current time slot highlighted
+  Future<Map<String, dynamic>> getAllDailyLinesWithCurrentHighlight() async {
+    final allLines = await getAllDailyLines();
+    final currentTimeSlot = _getCurrentTimeSlot();
+
+    return {
+      'lines': allLines,
+      'currentTimeSlot': currentTimeSlot,
+      'currentTimeSlotName': _getTimeSlotName(currentTimeSlot),
+    };
+  }
+
+  /// Get time slot name for display
+  String _getTimeSlotName(int timeSlot) {
+    switch (timeSlot) {
+      case 0:
+        return 'Morning';
+      case 1:
+        return 'Afternoon';
+      case 2:
+        return 'Evening';
+      default:
+        return 'Morning';
+    }
+  }
+
   /// Get the stored morning notification content (backward compatibility)
   Future<Map<String, String?>> getMorningNotificationContent() async {
     await _initPrefs();

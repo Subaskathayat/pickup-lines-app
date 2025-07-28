@@ -6,6 +6,7 @@ import '../models/app_theme.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
 import '../utils/snackbar_utils.dart';
+import '../utils/copy_utils.dart';
 
 class TextDetailScreen extends StatefulWidget {
   final Category category;
@@ -280,10 +281,12 @@ class _TextDetailScreenState extends State<TextDetailScreen> {
     );
   }
 
-  void _copyToClipboard(BuildContext context) {
-    Clipboard.setData(
-        ClipboardData(text: widget.category.texts[_currentIndex]));
-    SnackBarUtils.showSuccess(context, 'Text copied to clipboard! 💕');
+  void _copyToClipboard(BuildContext context) async {
+    await CopyUtils.copyWithAd(
+      context,
+      widget.category.texts[_currentIndex],
+      successMessage: 'Text copied to clipboard! 💕',
+    );
   }
 
   void _shareText(BuildContext context) {

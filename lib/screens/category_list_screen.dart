@@ -3,6 +3,7 @@ import '../models/category.dart';
 import '../models/app_theme.dart';
 import '../services/favorites_service.dart';
 import '../services/theme_service.dart';
+import '../services/ad_service.dart';
 import '../utils/snackbar_utils.dart';
 import 'text_detail_screen.dart';
 
@@ -16,21 +17,35 @@ class CategoryListScreen extends StatefulWidget {
 }
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
-  final GlobalKey<SliverAnimatedListState> _listKey =
-      GlobalKey<SliverAnimatedListState>();
-  late List<String> _texts;
+  late List<String> _allTexts;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _texts = List.from(widget.category.texts);
+    _allTexts = List.from(widget.category.texts);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Build list item (pickup line)
+  Widget _buildListItem(int index) {
+    return ScrollAnimatedItem(
+      index: index,
+      scrollController: _scrollController,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextCard(
+          text: _allTexts[index],
+          index: index,
+          category: widget.category,
+        ),
+      ),
+    );
   }
 
   @override
@@ -70,7 +85,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
                           ),
                         ),
                         Text(
-                          '${_texts.length} pickup lines',
+                          '${_allTexts.length} pickup lines',
                           style: TextStyle(
                             color: Theme.of(context)
                                 .colorScheme
@@ -96,20 +111,9 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  return ScrollAnimatedItem(
-                    index: index,
-                    scrollController: _scrollController,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TextCard(
-                        text: _texts[index],
-                        index: index,
-                        category: widget.category,
-                      ),
-                    ),
-                  );
+                  return _buildListItem(index);
                 },
-                childCount: _texts.length,
+                childCount: _allTexts.length,
               ),
             ),
           ),
@@ -302,6 +306,26 @@ class _TextCardState extends State<TextCard> {
         context,
         isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
       );
+
+      // Strategic ad trigger for favorite actions (with frequency capping)
+      try {
+        await AdService.instance.showRewardedAd(
+          onAdClosed: () {
+            debugPrint('❤️ Rewarded ad closed after favorite action');
+          },
+          onUserEarnedReward: () {
+            debugPrint('🎉 User earned reward from favorite action ad');
+            if (mounted) {
+              SnackBarUtils.showSuccess(context, 'Thanks for the support! 🎉');
+            }
+          },
+          onAdFailed: () {
+            debugPrint('⚠️ Favorite action ad failed to show');
+          },
+        );
+      } catch (e) {
+        debugPrint('❌ Error showing favorite action ad: $e');
+      }
     }
   }
 
@@ -313,15 +337,37 @@ class _TextCardState extends State<TextCard> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TextDetailScreen(
-                category: widget.category,
-                initialIndex: widget.index,
-              ),
-            ),
+        onTap: () async {
+          // Strategic ad trigger for card interactions
+          await AdService.instance.showRewardedAd(
+            onAdClosed: () {
+              // Navigate to detail screen after ad (or immediately if no ad shown)
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TextDetailScreen(
+                      category: widget.category,
+                      initialIndex: widget.index,
+                    ),
+                  ),
+                );
+              }
+            },
+            onAdFailed: () {
+              // Navigate immediately if ad fails
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TextDetailScreen(
+                      category: widget.category,
+                      initialIndex: widget.index,
+                    ),
+                  ),
+                );
+              }
+            },
           );
         },
         borderRadius: BorderRadius.circular(16),

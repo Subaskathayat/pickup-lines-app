@@ -13,10 +13,9 @@ class PickupLineOfDayScreen extends StatefulWidget {
 }
 
 class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
-  String todaysLine = "Loading your daily pickup line...";
-  String category = "Loading...";
-  String timeSlotInfo = "";
-  bool isFavorite = false;
+  List<Map<String, String?>> dailyLines = [];
+  int currentTimeSlot = 0;
+  String currentTimeSlotName = "Morning";
   bool isLoading = true;
   final FavoritesService _favoritesService = FavoritesService.instance;
   final LineOfDayService _lineOfDayService = LineOfDayService.instance;
@@ -27,87 +26,65 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
     _loadLineOfDay();
   }
 
+  /// Refresh the daily lines data
+  Future<void> _refreshDailyLines() async {
+    await _loadLineOfDay();
+  }
+
   Future<void> _loadLineOfDay() async {
     try {
       // Initialize the service (this handles daily line generation and synchronization)
       await _lineOfDayService.initialize();
 
-      // Get the most relevant content based on current time and recent notifications
-      final content = await _lineOfDayService.getMostRelevantContent();
+      // Get all 3 daily lines with current time slot highlighted
+      final allDailyData =
+          await _lineOfDayService.getAllDailyLinesWithCurrentHighlight();
+      final lines = allDailyData['lines'] as List<Map<String, String?>>;
+      final currentSlot = allDailyData['currentTimeSlot'] as int;
+      final currentSlotName = allDailyData['currentTimeSlotName'] as String;
 
-      final currentLine = content['line'];
-      final currentCategory = content['category'];
-
-      if (currentLine != null && currentCategory != null) {
-        // Check favorite status
-        bool favorite = await _favoritesService.isFavorite(currentLine);
-
-        // Determine current time slot for display
-        String timeSlot = _getCurrentTimeSlotDisplay();
-
-        if (mounted) {
-          setState(() {
-            todaysLine = currentLine;
-            category = currentCategory;
-            timeSlotInfo = timeSlot;
-            isFavorite = favorite;
-            isLoading = false;
-          });
-        }
-      } else {
-        // Fallback: try to get current line directly
-        String? fallbackLine = await _lineOfDayService.getCurrentLine();
-        String? fallbackCategory = await _lineOfDayService.getCurrentCategory();
-
-        if (fallbackLine != null && fallbackCategory != null) {
-          bool favorite = await _favoritesService.isFavorite(fallbackLine);
-          String timeSlot = _getCurrentTimeSlotDisplay();
-
-          if (mounted) {
-            setState(() {
-              todaysLine = fallbackLine;
-              category = fallbackCategory;
-              timeSlotInfo = timeSlot;
-              isFavorite = favorite;
-              isLoading = false;
-            });
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              todaysLine = "No pickup line available. Please check back later.";
-              category = "System";
-              timeSlotInfo = "";
-              isFavorite = false;
-              isLoading = false;
-            });
-          }
-        }
+      if (mounted) {
+        setState(() {
+          dailyLines = lines;
+          currentTimeSlot = currentSlot;
+          currentTimeSlotName = currentSlotName;
+          isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          todaysLine = "Error loading pickup line. Please try again.";
-          category = "Error";
-          timeSlotInfo = "";
-          isFavorite = false;
+          dailyLines = [
+            {
+              'line': "Error loading pickup lines. Please try again.",
+              'category': "Error",
+              'timeSlot': 'Morning',
+              'time': '8:00 AM',
+              'icon': '🌅',
+              'description': 'Start Your Day Right',
+            },
+            {
+              'line': "Error loading pickup lines. Please try again.",
+              'category': "Error",
+              'timeSlot': 'Afternoon',
+              'time': '1:00 PM',
+              'icon': '🌞',
+              'description': 'Pick-Me-Up',
+            },
+            {
+              'line': "Error loading pickup lines. Please try again.",
+              'category': "Error",
+              'timeSlot': 'Evening',
+              'time': '7:00 PM',
+              'icon': '🌙',
+              'description': 'Charm Time',
+            },
+          ];
+          currentTimeSlot = 0;
+          currentTimeSlotName = "Morning";
           isLoading = false;
         });
       }
-    }
-  }
-
-  /// Get display text for current time slot
-  String _getCurrentTimeSlotDisplay() {
-    final now = DateTime.now();
-    final currentHour = now.hour;
-
-    if (currentHour >= 19) {
-      return "Evening Edition (7:00 PM)";
-    } else if (currentHour >= 13) {
-      return "Afternoon Edition (1:00 PM)";
-    } else {
-      return "Morning Edition (8:00 AM)";
     }
   }
 
@@ -116,7 +93,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Line of the Day',
+          'Lines of the Day',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -133,7 +110,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Loading your daily pickup line...',
+                    'Loading your daily pickup lines...',
                     style: TextStyle(
                       fontSize: 16,
                       color: Theme.of(context)
@@ -145,13 +122,12 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                 ],
               ),
             )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date and category info
-                  Container(
+          : Column(
+              children: [
+                // Date header
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
@@ -188,7 +164,7 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          category,
+                          'Daily Lines',
                           style: const TextStyle(
                             color: Color(0xFFFFABAB),
                             fontWeight: FontWeight.w600,
@@ -197,167 +173,294 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                ),
 
-                  // Main card with pickup line
-                  Expanded(
-                    child: Center(
-                      child: Card(
-                        elevation: 8,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.4),
-                                Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.2),
-                                Theme.of(context).colorScheme.surface,
-                              ],
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.format_quote,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                todaysLine,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-
-                              // Action buttons
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  _buildActionButton(
-                                    icon: isFavorite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    label: 'Favorite',
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    onPressed: _toggleFavorite,
-                                  ),
-                                  _buildActionButton(
-                                    icon: Icons.copy,
-                                    label: 'Copy',
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                    onPressed: _copyToClipboard,
-                                  ),
-                                  _buildActionButton(
-                                    icon: Icons.share,
-                                    label: 'Share',
-                                    color:
-                                        Theme.of(context).colorScheme.tertiary,
-                                    onPressed: _shareText,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                // Scrollable list of all 3 daily lines with pull-to-refresh
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshDailyLines,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: dailyLines.length,
+                      itemBuilder: (context, index) {
+                        return _buildLineCard(index);
+                      },
                     ),
                   ),
+                ),
 
-                  // Bottom info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
+                // Bottom info
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: Theme.of(context)
                           .colorScheme
-                          .surface
-                          .withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .outline
-                            .withValues(alpha: 0.2),
-                        width: 1,
+                          .outline
+                          .withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Daily pickup lines synchronized with notifications:',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '8:00 AM • 1:00 PM • 7:00 PM',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.7),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Currently: $currentTimeSlotName Edition',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildLineCard(int index) {
+    final lineData = dailyLines[index];
+    final line = lineData['line'] ?? 'No line available';
+    final category = lineData['category'] ?? 'Unknown';
+    final timeSlot = lineData['timeSlot'] ?? 'Unknown';
+    final time = lineData['time'] ?? '';
+    final icon = lineData['icon'] ?? '⭐';
+    final isCurrentTimeSlot = index == currentTimeSlot;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        elevation: isCurrentTimeSlot ? 12 : 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: isCurrentTimeSlot
+              ? BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                )
+              : BorderSide.none,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isCurrentTimeSlot
+                  ? [
+                      Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.3),
+                      Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.1),
+                      Theme.of(context).colorScheme.surface,
+                    ]
+                  : [
+                      Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.8),
+                      Theme.of(context).colorScheme.surface,
+                    ],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time slot header
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isCurrentTimeSlot
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.schedule,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20,
+                        Text(
+                          icon,
+                          style: const TextStyle(fontSize: 16),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'New pickup lines featured 3 times daily:',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '8:00 AM • 1:00 PM • 7:00 PM',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.7),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              if (timeSlotInfo.isNotEmpty) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Currently showing: $timeSlotInfo',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '$timeSlot $time',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const Spacer(),
+                  if (isCurrentTimeSlot)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'CURRENT',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-            ),
+              const SizedBox(height: 16),
+
+              // Pickup line
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.format_quote,
+                      size: 32,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      line,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Category: $category',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  FutureBuilder<bool>(
+                    future: _favoritesService.isFavorite(line),
+                    builder: (context, snapshot) {
+                      final isFavorite = snapshot.data ?? false;
+                      return _buildActionButton(
+                        icon:
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                        label: 'Favorite',
+                        color: Theme.of(context).colorScheme.primary,
+                        onPressed: () => _toggleFavorite(line),
+                      );
+                    },
+                  ),
+                  _buildActionButton(
+                    icon: Icons.copy,
+                    label: 'Copy',
+                    color: Theme.of(context).colorScheme.secondary,
+                    onPressed: () => _copyToClipboard(line),
+                  ),
+                  _buildActionButton(
+                    icon: Icons.share,
+                    label: 'Share',
+                    color: Theme.of(context).colorScheme.tertiary,
+                    onPressed: () => _shareText(line),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -378,14 +481,14 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
           child: IconButton(
             onPressed: onPressed,
             icon: Icon(icon, color: color),
-            iconSize: 24,
+            iconSize: 20,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             color: color,
             fontWeight: FontWeight.w500,
           ),
@@ -413,28 +516,33 @@ class _PickupLineOfDayScreenState extends State<PickupLineOfDayScreen> {
     return '${months[now.month - 1]} ${now.day}';
   }
 
-  Future<void> _toggleFavorite() async {
-    bool success = await _favoritesService.toggleFavorite(todaysLine);
+  Future<void> _toggleFavorite(String line) async {
+    bool success = await _favoritesService.toggleFavorite(line);
     if (success && mounted) {
+      bool isFavorite = await _favoritesService.isFavorite(line);
+
+      // Refresh the UI to update favorite status
       setState(() {
-        isFavorite = !isFavorite;
+        // The UI will be updated on next build
       });
 
-      SnackBarUtils.showSnackBar(
-        context,
-        isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
-      );
+      if (mounted) {
+        SnackBarUtils.showSnackBar(
+          context,
+          isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites',
+        );
+      }
     }
   }
 
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: todaysLine));
+  void _copyToClipboard(String line) {
+    Clipboard.setData(ClipboardData(text: line));
     SnackBarUtils.showInfo(context, 'Copied to clipboard');
   }
 
-  void _shareText() {
+  void _shareText(String line) {
     SharePlus.instance.share(
-      ShareParams(text: todaysLine),
+      ShareParams(text: line),
     );
   }
 }

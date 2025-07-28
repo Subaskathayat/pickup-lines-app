@@ -5,6 +5,7 @@ import '../services/permission_flow_service.dart';
 import '../services/theme_service.dart';
 import '../services/premium_service.dart';
 import '../services/premium_content_service.dart';
+import '../services/ad_service.dart';
 import '../models/category.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/age_verification_dialog.dart';
@@ -425,8 +426,35 @@ class _HomeScreenState extends State<HomeScreen> {
     // Check if widget is still mounted after async operation
     if (!mounted) return;
 
+    // Strategic ad trigger for category navigation (with frequency capping)
+    try {
+      await AdService.instance.showRewardedAd(
+        onAdClosed: () {
+          // Navigate to category after ad (or immediately if no ad shown)
+          if (mounted) {
+            _performCategoryNavigation(category);
+          }
+        },
+        onAdFailed: () {
+          // Navigate immediately if ad fails
+          if (mounted) {
+            _performCategoryNavigation(category);
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ Error showing category navigation ad: $e');
+      // Navigate immediately if ad system fails
+      if (mounted) {
+        _performCategoryNavigation(category);
+      }
+    }
+  }
+
+  /// Perform the actual category navigation with age verification
+  void _performCategoryNavigation(Category category) {
     // Check if age verification is needed for mature content
-    await AgeVerificationUtils.checkAndShow(
+    AgeVerificationUtils.checkAndShow(
       context,
       category.name,
       () {
@@ -549,6 +577,7 @@ class CategoryCard extends StatelessWidget {
             context,
             category.name,
             () {
+              // Navigate directly to category list screen
               Navigator.push(
                 context,
                 MaterialPageRoute(
