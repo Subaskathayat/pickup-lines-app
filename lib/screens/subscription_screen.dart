@@ -41,7 +41,7 @@ class SubscriptionScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Icon(
-                    Icons.workspace_premium,
+                    Icons.diamond,
                     size: 64,
                     color: Colors.white,
                   ),

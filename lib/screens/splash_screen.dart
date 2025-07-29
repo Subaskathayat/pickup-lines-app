@@ -90,8 +90,8 @@ class _SplashScreenState extends State<SplashScreen>
     // Start animations
     _startAnimations();
 
-    // Navigate to home screen after 4 seconds
-    Timer(const Duration(seconds: 4), () {
+    // Navigate to home screen after 2.5 seconds
+    Timer(const Duration(milliseconds: 2500), () {
       _navigateToHome();
     });
   }

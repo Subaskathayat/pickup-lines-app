@@ -14,14 +14,19 @@ class AdService {
 
   SharedPreferences? _prefs;
   RewardedAd? _rewardedAd;
+  BannerAd? _bannerAd;
   bool _isRewardedAdReady = false;
+  bool _isBannerAdReady = false;
   bool _isLoadingAd = false;
+  bool _isLoadingBannerAd = false;
   final PremiumService _premiumService = PremiumService();
 
   // Ad Unit IDs - Using test ads for development
   // TODO: Switch to production ad units before release
   static const String _rewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917'; // Google's test rewarded ad unit
+  static const String _bannerAdUnitId =
+      'ca-app-pub-3940256099942544/6300978111'; // Google's test banner ad unit
 
   // Frequency capping settings
   static const int _interactionFrequency = 4; // Show ad every 4th interaction
@@ -213,12 +218,74 @@ class AdService {
     return _rewardedAdUnitId.contains('3940256099942544');
   }
 
+  /// Create a banner ad for display
+  /// Returns null for premium users or if ad fails to load
+  Future<BannerAd?> createBannerAd() async {
+    // Premium users get no ads
+    final isPremium = await _premiumService.isPremiumUser();
+    if (isPremium) {
+      debugPrint('👑 Premium user - banner ad skipped');
+      return null;
+    }
+
+    if (_isLoadingBannerAd) {
+      debugPrint('⏳ Banner ad already loading');
+      return null;
+    }
+
+    _isLoadingBannerAd = true;
+
+    try {
+      final bannerAd = BannerAd(
+        adUnitId: _bannerAdUnitId,
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: BannerAdListener(
+          onAdLoaded: (ad) {
+            debugPrint('✅ Banner ad loaded successfully');
+            _bannerAd = ad as BannerAd;
+            _isBannerAdReady = true;
+            _isLoadingBannerAd = false;
+          },
+          onAdFailedToLoad: (ad, error) {
+            debugPrint('❌ Banner ad failed to load: $error');
+            ad.dispose();
+            _isBannerAdReady = false;
+            _isLoadingBannerAd = false;
+          },
+          onAdOpened: (ad) {
+            debugPrint('📱 Banner ad opened');
+          },
+          onAdClosed: (ad) {
+            debugPrint('🚪 Banner ad closed');
+          },
+        ),
+      );
+
+      await bannerAd.load();
+      return bannerAd;
+    } catch (e) {
+      debugPrint('❌ Exception creating banner ad: $e');
+      _isLoadingBannerAd = false;
+      return null;
+    }
+  }
+
+  /// Dispose banner ad
+  void disposeBannerAd() {
+    _bannerAd?.dispose();
+    _bannerAd = null;
+    _isBannerAdReady = false;
+    _isLoadingBannerAd = false;
+  }
+
   /// Get ad configuration info
   Future<Map<String, String>> getAdConfiguration() async {
     final isPremium = await _premiumService.isPremiumUser();
     return {
       'using_test_ads': isUsingTestAds().toString(),
       'rewarded_ad_unit': _rewardedAdUnitId,
+      'banner_ad_unit': _bannerAdUnitId,
       'interaction_frequency': _interactionFrequency.toString(),
       'min_time_between_ads': _minTimeBetweenAds.toString(),
       'premium_user': isPremium.toString(),
@@ -231,8 +298,14 @@ class AdService {
     _prefs ??= await SharedPreferences.getInstance();
   }
 
-  /// Dispose resources
+  /// Dispose all ads and clean up resources
   void dispose() {
     _rewardedAd?.dispose();
+    _rewardedAd = null;
+    _isRewardedAdReady = false;
+
+    disposeBannerAd();
+
+    debugPrint('🧹 AdService disposed');
   }
 }

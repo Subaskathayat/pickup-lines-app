@@ -8,6 +8,7 @@ import '../models/app_theme.dart';
 
 import '../widgets/permission_dialog.dart';
 import '../widgets/theme_selection_widget.dart';
+import '../widgets/banner_ad_widget.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -55,74 +56,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          _buildSectionHeader('Notifications'),
-          if (!notificationsEnabled) _buildPermissionStatusTile(),
-          if (!notificationsEnabled) const SizedBox(height: 8),
-          _buildSwitchTile(
-            title: 'Daily Line Notification',
-            subtitle: 'Get pickup lines 3 times daily (8 AM, 1 PM, 7 PM)',
-            value: dailyLineNotification,
-            onChanged: notificationsEnabled
-                ? (value) async {
-                    // Capture context before async operation
-                    final currentContext = context;
+          // Main settings content
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildSectionHeader('Notifications'),
+                if (!notificationsEnabled) _buildPermissionStatusTile(),
+                if (!notificationsEnabled) const SizedBox(height: 8),
+                _buildSwitchTile(
+                  title: 'Daily Line Notification',
+                  subtitle: 'Get pickup lines 3 times daily (8 AM, 1 PM, 7 PM)',
+                  value: dailyLineNotification,
+                  onChanged: notificationsEnabled
+                      ? (value) async {
+                          // Capture context before async operation
+                          final currentContext = context;
 
+                          setState(() {
+                            dailyLineNotification = value;
+                          });
+
+                          // Update the daily notification service
+                          await DailyNotificationService()
+                              .setDailyNotificationEnabled(value);
+
+                          // Show feedback to user
+                          if (mounted) {
+                            if (value) {
+                              SnackBarUtils.showSuccess(currentContext,
+                                  'Daily notifications enabled! 💕');
+                            } else {
+                              SnackBarUtils.showInfo(currentContext,
+                                  'Daily notifications disabled');
+                            }
+                          }
+                        }
+                      : null,
+                ),
+                if (!notificationsEnabled) _buildPermissionActionTile(),
+                const SizedBox(height: 24),
+                _buildSectionHeader('Appearance'),
+                const ThemeSelectionWidget(),
+                const SizedBox(height: 24),
+                _buildSectionHeader('Language'),
+                _buildDropdownTile(
+                  title: 'Language',
+                  subtitle: 'Choose app language',
+                  value: selectedLanguage,
+                  items: ['English', 'Spanish', 'French', 'German'],
+                  onChanged: (value) {
                     setState(() {
-                      dailyLineNotification = value;
+                      selectedLanguage = value!;
                     });
-
-                    // Update the daily notification service
-                    await DailyNotificationService()
-                        .setDailyNotificationEnabled(value);
-
-                    // Show feedback to user
-                    if (mounted) {
-                      if (value) {
-                        SnackBarUtils.showSuccess(
-                            currentContext, 'Daily notifications enabled! 💕');
-                      } else {
-                        SnackBarUtils.showInfo(
-                            currentContext, 'Daily notifications disabled');
-                      }
-                    }
-                  }
-                : null,
+                  },
+                ),
+                const SizedBox(height: 24),
+                _buildSectionHeader('Data'),
+                _buildActionTile(
+                  title: 'Reset Favorites',
+                  subtitle: 'Remove all favorite pickup lines',
+                  icon: Icons.refresh,
+                  onTap: _resetFavorites,
+                ),
+                const SizedBox(height: 24),
+                _buildSectionHeader('About'),
+                _buildInfoTile(
+                  title: 'Version',
+                  subtitle: '1.0.0',
+                  icon: Icons.info_outline,
+                ),
+              ],
+            ),
           ),
-          if (!notificationsEnabled) _buildPermissionActionTile(),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Appearance'),
-          const ThemeSelectionWidget(),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Language'),
-          _buildDropdownTile(
-            title: 'Language',
-            subtitle: 'Choose app language',
-            value: selectedLanguage,
-            items: ['English', 'Spanish', 'French', 'German'],
-            onChanged: (value) {
-              setState(() {
-                selectedLanguage = value!;
-              });
-            },
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Data'),
-          _buildActionTile(
-            title: 'Reset Favorites',
-            subtitle: 'Remove all favorite pickup lines',
-            icon: Icons.refresh,
-            onTap: _resetFavorites,
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('About'),
-          _buildInfoTile(
-            title: 'Version',
-            subtitle: '1.0.0',
-            icon: Icons.info_outline,
-          ),
+          // Banner ad at the bottom (only for non-premium users)
+          const SettingsBannerAdWidget(),
         ],
       ),
     );
